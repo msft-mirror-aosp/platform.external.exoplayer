@@ -24,7 +24,7 @@ android_library {
         "androidx.annotation_annotation",
     ],
     jarjar_rules: "exoplayer2-core-jarjar-rules.txt",
-    visibility: ["//frameworks/base"],
+    visibility: ["//frameworks/base:__subpackages__"],
 }
 
 // Compile dummy implementations of annotations used by exoplayer but not
