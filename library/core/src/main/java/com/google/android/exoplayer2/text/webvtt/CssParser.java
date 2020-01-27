@@ -16,10 +16,10 @@
 package com.google.android.exoplayer2.text.webvtt;
 
 import android.text.TextUtils;
+import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.util.ColorParser;
 import com.google.android.exoplayer2.util.ParsableByteArray;
 import com.google.android.exoplayer2.util.Util;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -31,14 +31,19 @@ import java.util.regex.Pattern;
  */
 /* package */ final class CssParser {
 
+  private static final String TAG = "CssParser";
+
+  private static final String RULE_START = "{";
+  private static final String RULE_END = "}";
   private static final String PROPERTY_BGCOLOR = "background-color";
   private static final String PROPERTY_FONT_FAMILY = "font-family";
   private static final String PROPERTY_FONT_WEIGHT = "font-weight";
+  private static final String PROPERTY_TEXT_COMBINE_UPRIGHT = "text-combine-upright";
+  private static final String VALUE_ALL = "all";
+  private static final String VALUE_DIGITS = "digits";
   private static final String PROPERTY_TEXT_DECORATION = "text-decoration";
   private static final String VALUE_BOLD = "bold";
   private static final String VALUE_UNDERLINE = "underline";
-  private static final String RULE_START = "{";
-  private static final String RULE_END = "}";
   private static final String PROPERTY_FONT_STYLE = "font-style";
   private static final String VALUE_ITALIC = "italic";
 
@@ -98,13 +103,14 @@ import java.util.regex.Pattern;
   }
 
   /**
-   * Returns a string containing the selector. The input is expected to have the form
-   * {@code ::cue(tag#id.class1.class2[voice="someone"]}, where every element is optional.
+   * Returns a string containing the selector. The input is expected to have the form {@code
+   * ::cue(tag#id.class1.class2[voice="someone"]}, where every element is optional.
    *
    * @param input From which the selector is obtained.
-   * @return A string containing the target, empty string if the selector is universal
-   *     (targets all cues) or null if an error was encountered.
+   * @return A string containing the target, empty string if the selector is universal (targets all
+   *     cues) or null if an error was encountered.
    */
+  @Nullable
   private static String parseSelector(ParsableByteArray input, StringBuilder stringBuilder) {
     skipWhitespaceAndComments(input);
     if (input.bytesLeft() < 5) {
@@ -128,7 +134,7 @@ import java.util.regex.Pattern;
       target = readCueTarget(input);
     }
     token = parseNextToken(input, stringBuilder);
-    if (!")".equals(token) || token == null) {
+    if (!")".equals(token)) {
       return null;
     }
     return target;
@@ -181,6 +187,8 @@ import java.util.regex.Pattern;
       style.setFontColor(ColorParser.parseCssColor(value));
     } else if (PROPERTY_BGCOLOR.equals(property)) {
       style.setBackgroundColor(ColorParser.parseCssColor(value));
+    } else if (PROPERTY_TEXT_COMBINE_UPRIGHT.equals(property)) {
+      style.setCombineUpright(VALUE_ALL.equals(value) || value.startsWith(VALUE_DIGITS));
     } else if (PROPERTY_TEXT_DECORATION.equals(property)) {
       if (VALUE_UNDERLINE.equals(value)) {
         style.setUnderline(true);
@@ -208,6 +216,7 @@ import java.util.regex.Pattern;
   }
 
   // Visible for testing.
+  @Nullable
   /* package */ static String parseNextToken(ParsableByteArray input, StringBuilder stringBuilder) {
     skipWhitespaceAndComments(input);
     if (input.bytesLeft() == 0) {
@@ -249,6 +258,7 @@ import java.util.regex.Pattern;
     return (char) input.data[position];
   }
 
+  @Nullable
   private static String parsePropertyValue(ParsableByteArray input, StringBuilder stringBuilder) {
     StringBuilder expressionBuilder = new StringBuilder();
     String token;
@@ -337,7 +347,7 @@ import java.util.regex.Pattern;
       style.setTargetTagName(tagAndIdDivision);
     }
     if (classDivision.length > 1) {
-      style.setTargetClasses(Arrays.copyOfRange(classDivision, 1, classDivision.length));
+      style.setTargetClasses(Util.nullSafeArrayCopyOfRange(classDivision, 1, classDivision.length));
     }
   }
 

@@ -18,14 +18,15 @@ package com.google.android.exoplayer2.offline;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.net.Uri;
+import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.offline.Download.State;
 import com.google.android.exoplayer2.scheduler.Requirements;
+import com.google.android.exoplayer2.testutil.DownloadBuilder;
 import com.google.android.exoplayer2.testutil.DummyMainThread;
 import com.google.android.exoplayer2.testutil.DummyMainThread.TestRunnable;
-import com.google.android.exoplayer2.testutil.RobolectricUtil;
 import com.google.android.exoplayer2.testutil.TestDownloadManagerListener;
 import com.google.android.exoplayer2.testutil.TestUtil;
 import java.io.IOException;
@@ -41,12 +42,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockitoAnnotations;
-import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
+import org.robolectric.annotation.LooperMode.Mode;
 import org.robolectric.shadows.ShadowLog;
 
 /** Tests {@link DownloadManager}. */
 @RunWith(AndroidJUnit4.class)
-@Config(shadows = {RobolectricUtil.CustomLooper.class, RobolectricUtil.CustomMessageQueue.class})
+@LooperMode(Mode.PAUSED)
 public class DownloadManagerTest {
 
   /** Used to check if condition becomes true in this time interval. */
@@ -81,7 +83,7 @@ public class DownloadManagerTest {
     uri2 = Uri.parse("http://abc.com/media2");
     uri3 = Uri.parse("http://abc.com/media3");
     dummyMainThread = new DummyMainThread();
-    downloadIndex = new DefaultDownloadIndex(TestUtil.getTestDatabaseProvider());
+    downloadIndex = new DefaultDownloadIndex(TestUtil.getInMemoryDatabaseProvider());
     downloaderFactory = new FakeDownloaderFactory();
     setUpDownloadManager(100);
   }
@@ -714,7 +716,7 @@ public class DownloadManagerTest {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
       if (this == o) {
         return true;
       }
@@ -797,15 +799,10 @@ public class DownloadManagerTest {
 
     private void block() throws InterruptedException {
       try {
-        while (true) {
-          try {
-            blocker.block();
-            break;
-          } catch (InterruptedException e) {
-            interrupted = true;
-            throw e;
-          }
-        }
+        blocker.block();
+      } catch (InterruptedException e) {
+        interrupted = true;
+        throw e;
       } finally {
         blocker.close();
       }

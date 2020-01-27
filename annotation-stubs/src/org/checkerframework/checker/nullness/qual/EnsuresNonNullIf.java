@@ -20,6 +20,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import kotlin.annotations.jvm.MigrationStatus;
 
 // This is an annotation stub to avoid dependencies on annotations that aren't
 // in the Android platform source tree.
@@ -45,5 +46,7 @@ public @interface EnsuresNonNullIf {
   boolean result() default false;
 
   String expression() default "";
+
+  MigrationStatus status() default MigrationStatus.IGNORE;
 
 }

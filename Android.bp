@@ -16,8 +16,11 @@
 
 android_library {
     name: "exoplayer2-core",
-    manifest: "library/core/src/main/AndroidManifest.xml",
-    srcs: ["library/core/src/main/java/**/*.java"],
+    manifest: "library/extractor/src/main/AndroidManifest.xml",
+    srcs: [
+        "library/extractor/src/main/java/**/*.java",
+        "library/common/src/main/java/**/*.java",
+    ],
     sdk_version: "current",
     static_libs: [
         "exoplayer2-core-annotation-stubs",

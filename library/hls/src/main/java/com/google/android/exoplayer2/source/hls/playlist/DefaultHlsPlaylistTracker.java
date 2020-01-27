@@ -31,6 +31,7 @@ import com.google.android.exoplayer2.upstream.Loader;
 import com.google.android.exoplayer2.upstream.Loader.LoadErrorAction;
 import com.google.android.exoplayer2.upstream.ParsingLoadable;
 import com.google.android.exoplayer2.util.Assertions;
+import com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -117,7 +118,7 @@ public final class DefaultHlsPlaylistTracker
       Uri initialPlaylistUri,
       EventDispatcher eventDispatcher,
       PrimaryPlaylistListener primaryPlaylistListener) {
-    this.playlistRefreshHandler = new Handler();
+    this.playlistRefreshHandler = Util.createHandler();
     this.eventDispatcher = eventDispatcher;
     this.primaryPlaylistListener = primaryPlaylistListener;
     ParsingLoadable<HlsPlaylist> masterPlaylistLoadable =
@@ -166,11 +167,13 @@ public final class DefaultHlsPlaylistTracker
   }
 
   @Override
-  public @Nullable HlsMasterPlaylist getMasterPlaylist() {
+  @Nullable
+  public HlsMasterPlaylist getMasterPlaylist() {
     return masterPlaylist;
   }
 
   @Override
+  @Nullable
   public HlsMediaPlaylist getPlaylistSnapshot(Uri url, boolean isForPlayback) {
     HlsMediaPlaylist snapshot = playlistBundles.get(url).getPlaylistSnapshot();
     if (snapshot != null && isForPlayback) {
@@ -447,7 +450,7 @@ public final class DefaultHlsPlaylistTracker
     private final Loader mediaPlaylistLoader;
     private final ParsingLoadable<HlsPlaylist> mediaPlaylistLoadable;
 
-    private HlsMediaPlaylist playlistSnapshot;
+    @Nullable private HlsMediaPlaylist playlistSnapshot;
     private long lastSnapshotLoadMs;
     private long lastSnapshotChangeMs;
     private long earliestNextLoadTimeMs;
@@ -466,6 +469,7 @@ public final class DefaultHlsPlaylistTracker
               mediaPlaylistParser);
     }
 
+    @Nullable
     public HlsMediaPlaylist getPlaylistSnapshot() {
       return playlistSnapshot;
     }
