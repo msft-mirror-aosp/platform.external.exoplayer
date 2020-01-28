@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.drm.DrmSessionManager;
 import com.google.android.exoplayer2.source.CompositeSequenceableLoaderFactory;
 import com.google.android.exoplayer2.source.MediaSource.MediaPeriodId;
 import com.google.android.exoplayer2.source.MediaSourceEventListener.EventDispatcher;
@@ -35,7 +36,6 @@ import com.google.android.exoplayer2.source.dash.manifest.SegmentBase.SingleSegm
 import com.google.android.exoplayer2.source.dash.manifest.UtcTimingElement;
 import com.google.android.exoplayer2.testutil.MediaPeriodAsserts;
 import com.google.android.exoplayer2.testutil.MediaPeriodAsserts.FilterableManifestMediaPeriodFactory;
-import com.google.android.exoplayer2.testutil.RobolectricUtil;
 import com.google.android.exoplayer2.upstream.Allocator;
 import com.google.android.exoplayer2.upstream.LoadErrorHandlingPolicy;
 import com.google.android.exoplayer2.upstream.LoaderErrorThrower;
@@ -45,11 +45,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 
 /** Unit tests for {@link DashMediaPeriod}. */
 @RunWith(AndroidJUnit4.class)
-@Config(shadows = {RobolectricUtil.CustomLooper.class, RobolectricUtil.CustomMessageQueue.class})
+@LooperMode(LooperMode.Mode.PAUSED)
 public final class DashMediaPeriodTest {
 
   @Test
@@ -73,31 +73,31 @@ public final class DashMediaPeriodTest {
                 createAdaptationSet(
                     /* id= */ 100,
                     /* trackType= */ C.TRACK_TYPE_VIDEO,
-                    /* descriptor= */ createSwitchDescriptor(/* ids= */ 103, 104),
+                    /* descriptor= */ createSwitchDescriptor(/* ids...= */ 103, 104),
                     createVideoRepresentationWithInbandEventStream(/* bitrate= */ 200000),
                     createVideoRepresentationWithInbandEventStream(/* bitrate= */ 400000),
                     createVideoRepresentationWithInbandEventStream(/* bitrate= */ 600000)),
                 createAdaptationSet(
                     /* id= */ 101,
                     /* trackType= */ C.TRACK_TYPE_AUDIO,
-                    /* descriptor= */ createSwitchDescriptor(/* ids= */ 102),
+                    /* descriptor= */ createSwitchDescriptor(/* ids...= */ 102),
                     createAudioRepresentation(/* bitrate= */ 48000),
                     createAudioRepresentation(/* bitrate= */ 96000)),
                 createAdaptationSet(
                     /* id= */ 102,
                     /* trackType= */ C.TRACK_TYPE_AUDIO,
-                    /* descriptor= */ createSwitchDescriptor(/* ids= */ 101),
+                    /* descriptor= */ createSwitchDescriptor(/* ids...= */ 101),
                     createAudioRepresentation(/* bitrate= */ 256000)),
                 createAdaptationSet(
                     /* id= */ 103,
                     /* trackType= */ C.TRACK_TYPE_VIDEO,
-                    /* descriptor= */ createSwitchDescriptor(/* ids= */ 100, 104),
+                    /* descriptor= */ createSwitchDescriptor(/* ids...= */ 100, 104),
                     createVideoRepresentationWithInbandEventStream(/* bitrate= */ 800000),
                     createVideoRepresentationWithInbandEventStream(/* bitrate= */ 1000000)),
                 createAdaptationSet(
                     /* id= */ 104,
                     /* trackType= */ C.TRACK_TYPE_VIDEO,
-                    /* descriptor= */ createSwitchDescriptor(/* ids= */ 100, 103),
+                    /* descriptor= */ createSwitchDescriptor(/* ids...= */ 100, 103),
                     createVideoRepresentationWithInbandEventStream(/* bitrate= */ 2000000)),
                 createAdaptationSet(
                     /* id= */ 105,
@@ -117,6 +117,7 @@ public final class DashMediaPeriodTest {
                 periodIndex,
                 mock(DashChunkSource.Factory.class),
                 mock(TransferListener.class),
+                DrmSessionManager.getDummyDrmSessionManager(),
                 mock(LoadErrorHandlingPolicy.class),
                 new EventDispatcher()
                     .withParameters(
