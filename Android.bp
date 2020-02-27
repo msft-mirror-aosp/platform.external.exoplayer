@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+// Exposes ExoPlayer classes required for implementing the MediaParser API.
 android_library {
     name: "exoplayer2-extractor",
     manifest: "library/extractor/src/main/AndroidManifest.xml",
@@ -41,8 +42,35 @@ java_library {
     visibility: ["//visibility:private"],
 }
 
-// Target that exposes the assets for testing MediaParser behavior.
-android_test_helper_app {
+// Exposes util classes for testing MediaParser.
+android_library {
+    name: "exoplayer2-extractor-test-utils",
+    manifest: "library/extractor/src/test/AndroidManifest.xml",
+    srcs: [
+        "testutils/src/main/java/com/google/android/exoplayer2/testutil/Dumper.java",
+        "testutils/src/main/java/com/google/android/exoplayer2/testutil/FakeExtractorInput.java",
+        "testutils/src/main/java/com/google/android/exoplayer2/testutil/FakeExtractorOutput.java",
+        "testutils/src/main/java/com/google/android/exoplayer2/testutil/FakeTrackOutput.java",
+        "testutils/src/main/java/com/google/android/exoplayer2/testutil/TestUtil.java",
+        "library/core/src/main/java/com/google/android/exoplayer2/database/DatabaseProvider.java",
+        "library/core/src/main/java/com/google/android/exoplayer2/database/DefaultDatabaseProvider.java",
+    ],
+    sdk_version: "current",
+    static_libs: [
+        "exoplayer2-extractor",
+        "exoplayer2-extractor-annotation-stubs",
+        "androidx.annotation_annotation",
+        "truth-prebuilt",
+        "junit",
+        "androidx.test.core",
+    ],
+    jarjar_rules: "exoplayer2-extractor-jarjar-rules.txt",
+    visibility: ["//cts/tests/tests/mediaparser:__subpackages__"],
+    notice: "LICENSE",
+}
+
+// Exposes the assets for testing MediaParser.
+android_library {
     name: "exoplayer2-extractor-tests-assets",
     manifest: "library/extractor/src/main/AndroidManifest.xml",
     srcs: [],
