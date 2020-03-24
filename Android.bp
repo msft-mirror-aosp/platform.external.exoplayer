@@ -22,7 +22,7 @@ android_library {
         "library/extractor/src/main/java/**/*.java",
         "library/common/src/main/java/**/*.java",
     ],
-    sdk_version: "current",
+    sdk_version: "29", // Needs to be a prebuilt, so not "current".
     static_libs: [
         "exoplayer2-extractor-annotation-stubs",
         "androidx.annotation_annotation",
@@ -55,7 +55,7 @@ android_library {
         "library/core/src/main/java/com/google/android/exoplayer2/database/DatabaseProvider.java",
         "library/core/src/main/java/com/google/android/exoplayer2/database/DefaultDatabaseProvider.java",
     ],
-    sdk_version: "current",
+    sdk_version: "29",
     static_libs: [
         "exoplayer2-extractor",
         "exoplayer2-extractor-annotation-stubs",
@@ -74,7 +74,7 @@ android_library {
     name: "exoplayer2-extractor-tests-assets",
     manifest: "library/extractor/src/main/AndroidManifest.xml",
     srcs: [],
-    sdk_version: "current",
+    sdk_version: "29",
     visibility: ["//cts/tests/tests/mediaparser:__subpackages__"],
     asset_dirs: ["library/extractor/src/test/assets"],
     // Do not compress media files.
