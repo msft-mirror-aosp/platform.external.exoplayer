@@ -26,6 +26,7 @@ android_library {
     static_libs: [
         "exoplayer2-extractor-annotation-stubs",
         "androidx.annotation_annotation",
+        "jsr305",
     ],
     jarjar_rules: "exoplayer2-extractor-jarjar-rules.txt",
     visibility: ["//frameworks/base:__subpackages__"],
@@ -39,6 +40,7 @@ java_library {
     host_supported: true,
     sdk_version: "core_current",
     srcs: ["annotation-stubs/src/**/*.java"],
+    static_libs: ["jsr305"],
     visibility: ["//visibility:private"],
 }
 
