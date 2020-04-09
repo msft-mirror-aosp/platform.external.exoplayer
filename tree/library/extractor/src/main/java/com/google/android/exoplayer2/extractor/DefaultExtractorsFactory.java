@@ -52,7 +52,13 @@ import java.lang.reflect.Constructor;
  *   <li>AC3 ({@link Ac3Extractor})
  *   <li>AC4 ({@link Ac4Extractor})
  *   <li>AMR ({@link AmrExtractor})
- *   <li>FLAC (only available if the FLAC extension is built and included)
+ *   <li>FLAC
+ *       <ul>
+ *         <li>If available, the FLAC extension extractor is used.
+ *         <li>Otherwise, the core {@link FlacExtractor} is used. Note that Android devices do not
+ *             generally include a FLAC decoder before API 27. This can be worked around by using
+ *             the FLAC extension or the FFmpeg extension.
+ *       </ul>
  * </ul>
  */
 public final class DefaultExtractorsFactory implements ExtractorsFactory {
@@ -87,14 +93,15 @@ public final class DefaultExtractorsFactory implements ExtractorsFactory {
   }
 
   private boolean constantBitrateSeekingEnabled;
-  private @AdtsExtractor.Flags int adtsFlags;
-  private @AmrExtractor.Flags int amrFlags;
-  private @MatroskaExtractor.Flags int matroskaFlags;
-  private @Mp4Extractor.Flags int mp4Flags;
-  private @FragmentedMp4Extractor.Flags int fragmentedMp4Flags;
-  private @Mp3Extractor.Flags int mp3Flags;
-  private @TsExtractor.Mode int tsMode;
-  private @DefaultTsPayloadReaderFactory.Flags int tsFlags;
+  @AdtsExtractor.Flags private int adtsFlags;
+  @AmrExtractor.Flags private int amrFlags;
+  @FlacExtractor.Flags private int coreFlacFlags;
+  @MatroskaExtractor.Flags private int matroskaFlags;
+  @Mp4Extractor.Flags private int mp4Flags;
+  @FragmentedMp4Extractor.Flags private int fragmentedMp4Flags;
+  @Mp3Extractor.Flags private int mp3Flags;
+  @TsExtractor.Mode private int tsMode;
+  @DefaultTsPayloadReaderFactory.Flags private int tsFlags;
 
   public DefaultExtractorsFactory() {
     tsMode = TsExtractor.MODE_SINGLE_PMT;
@@ -139,6 +146,19 @@ public final class DefaultExtractorsFactory implements ExtractorsFactory {
    */
   public synchronized DefaultExtractorsFactory setAmrExtractorFlags(@AmrExtractor.Flags int flags) {
     this.amrFlags = flags;
+    return this;
+  }
+
+  /**
+   * Sets flags for {@link FlacExtractor} instances created by the factory.
+   *
+   * @see FlacExtractor#FlacExtractor(int)
+   * @param flags The flags to use.
+   * @return The factory, for convenience.
+   */
+  public synchronized DefaultExtractorsFactory setCoreFlacExtractorFlags(
+      @FlacExtractor.Flags int flags) {
+    this.coreFlacFlags = flags;
     return this;
   }
 
@@ -221,48 +241,46 @@ public final class DefaultExtractorsFactory implements ExtractorsFactory {
   @Override
   public synchronized Extractor[] createExtractors() {
     Extractor[] extractors = new Extractor[14];
-    extractors[0] = new MatroskaExtractor(matroskaFlags);
-    extractors[1] = new FragmentedMp4Extractor(fragmentedMp4Flags);
-    extractors[2] = new Mp4Extractor(mp4Flags);
-    extractors[3] =
-        new Mp3Extractor(
-            mp3Flags
-                | (constantBitrateSeekingEnabled
-                    ? Mp3Extractor.FLAG_ENABLE_CONSTANT_BITRATE_SEEKING
-                    : 0));
-    extractors[4] =
-        new AdtsExtractor(
-            adtsFlags
-                | (constantBitrateSeekingEnabled
-                    ? AdtsExtractor.FLAG_ENABLE_CONSTANT_BITRATE_SEEKING
-                    : 0));
-    extractors[5] = new Ac3Extractor();
-    extractors[6] = new TsExtractor(tsMode, tsFlags);
-    extractors[7] = new FlvExtractor();
-    extractors[8] = new OggExtractor();
-    extractors[9] = new PsExtractor();
-    extractors[10] = new WavExtractor();
-    extractors[11] =
-        new AmrExtractor(
-            amrFlags
-                | (constantBitrateSeekingEnabled
-                    ? AmrExtractor.FLAG_ENABLE_CONSTANT_BITRATE_SEEKING
-                    : 0));
-    extractors[12] = new Ac4Extractor();
-    // Prefer the FLAC extension extractor because it outputs raw audio, which can be handled by the
-    // framework on all API levels, unlike the core library FLAC extractor, which outputs FLAC audio
-    // frames and so relies on having a FLAC decoder (e.g., a MediaCodec decoder that handles FLAC
-    // (from API 27), or the FFmpeg extension with FLAC enabled).
+    // Extractors order is optimized according to
+    // https://docs.google.com/document/d/1w2mKaWMxfz2Ei8-LdxqbPs1VLe_oudB-eryXXw9OvQQ.
+    extractors[0] = new FlvExtractor();
     if (FLAC_EXTENSION_EXTRACTOR_CONSTRUCTOR != null) {
       try {
-        extractors[13] = FLAC_EXTENSION_EXTRACTOR_CONSTRUCTOR.newInstance();
+        extractors[1] = FLAC_EXTENSION_EXTRACTOR_CONSTRUCTOR.newInstance();
       } catch (Exception e) {
         // Should never happen.
         throw new IllegalStateException("Unexpected error creating FLAC extractor", e);
       }
     } else {
-      extractors[13] = new FlacExtractor();
+      extractors[1] = new FlacExtractor(coreFlacFlags);
     }
+    extractors[2] = new WavExtractor();
+    extractors[3] = new FragmentedMp4Extractor(fragmentedMp4Flags);
+    extractors[4] = new Mp4Extractor(mp4Flags);
+    extractors[5] =
+        new AmrExtractor(
+            amrFlags
+                | (constantBitrateSeekingEnabled
+                    ? AmrExtractor.FLAG_ENABLE_CONSTANT_BITRATE_SEEKING
+                    : 0));
+    extractors[6] = new PsExtractor();
+    extractors[7] = new OggExtractor();
+    extractors[8] = new TsExtractor(tsMode, tsFlags);
+    extractors[9] = new MatroskaExtractor(matroskaFlags);
+    extractors[10] =
+        new AdtsExtractor(
+            adtsFlags
+                | (constantBitrateSeekingEnabled
+                    ? AdtsExtractor.FLAG_ENABLE_CONSTANT_BITRATE_SEEKING
+                    : 0));
+    extractors[11] = new Ac3Extractor();
+    extractors[12] = new Ac4Extractor();
+    extractors[13] =
+        new Mp3Extractor(
+            mp3Flags
+                | (constantBitrateSeekingEnabled
+                    ? Mp3Extractor.FLAG_ENABLE_CONSTANT_BITRATE_SEEKING
+                    : 0));
     return extractors;
   }
 
