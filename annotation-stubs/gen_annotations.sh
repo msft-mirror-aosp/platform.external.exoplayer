@@ -3,8 +3,6 @@
 # Creates stubs for the checker framework annotations.
 
 ANNOTATIONS=(
-    javax.annotation.Nonnull
-    javax.annotation.meta.TypeQualifierDefault
     kotlin.annotations.jvm.UnderMigration
     org.checkerframework.checker.initialization.qual.UnknownInitialization
     org.checkerframework.checker.nullness.compatqual.NullableType
@@ -27,10 +25,6 @@ for a in ${ANNOTATIONS[@]}; do
     class=${a##*.}
     dir=$(dirname $0)/src/${package//.//}
     value_type="String[]"
-    if [ "$a" == "javax.annotation.meta.TypeQualifierDefault" ]; then
-        # javax.annotation.meta.TypeQualifierDefault conflicts with the template.
-        value_type="ElementType[]"
-    fi
     file=${class}.java
     mkdir -p ${dir}
     sed -e"s/__PACKAGE__/${package}/"\
