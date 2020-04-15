@@ -15,9 +15,10 @@
  */
 package com.google.android.exoplayer2.text.webvtt;
 
-import static com.google.android.exoplayer2.text.SpanUtil.addOrReplaceSpan;
+import static com.google.android.exoplayer2.text.span.SpanUtil.addOrReplaceSpan;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.text.Layout;
 import android.text.SpannableStringBuilder;
@@ -34,7 +35,6 @@ import android.text.style.StyleSpan;
 import android.text.style.TypefaceSpan;
 import android.text.style.UnderlineSpan;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.text.span.HorizontalTextInVerticalContextSpan;
@@ -48,7 +48,10 @@ import java.lang.annotation.Retention;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
@@ -136,6 +139,44 @@ public final class WebvttCueParser {
   /* package */ static final float DEFAULT_POSITION = 0.5f;
 
   private static final String TAG = "WebvttCueParser";
+
+  /**
+   * See WebVTT's <a href="https://www.w3.org/TR/webvtt1/#default-text-color">default text
+   * colors</a>.
+   */
+  private static final Map<String, Integer> DEFAULT_TEXT_COLORS;
+
+  static {
+    Map<String, Integer> defaultColors = new HashMap<>();
+    defaultColors.put("white", Color.rgb(255, 255, 255));
+    defaultColors.put("lime", Color.rgb(0, 255, 0));
+    defaultColors.put("cyan", Color.rgb(0, 255, 255));
+    defaultColors.put("red", Color.rgb(255, 0, 0));
+    defaultColors.put("yellow", Color.rgb(255, 255, 0));
+    defaultColors.put("magenta", Color.rgb(255, 0, 255));
+    defaultColors.put("blue", Color.rgb(0, 0, 255));
+    defaultColors.put("black", Color.rgb(0, 0, 0));
+    DEFAULT_TEXT_COLORS = Collections.unmodifiableMap(defaultColors);
+  }
+
+  /**
+   * See WebVTT's <a href="https://www.w3.org/TR/webvtt1/#default-text-background">default text
+   * background colors</a>.
+   */
+  private static final Map<String, Integer> DEFAULT_BACKGROUND_COLORS;
+
+  static {
+    Map<String, Integer> defaultBackgroundColors = new HashMap<>();
+    defaultBackgroundColors.put("bg_white", Color.rgb(255, 255, 255));
+    defaultBackgroundColors.put("bg_lime", Color.rgb(0, 255, 0));
+    defaultBackgroundColors.put("bg_cyan", Color.rgb(0, 255, 255));
+    defaultBackgroundColors.put("bg_red", Color.rgb(255, 0, 0));
+    defaultBackgroundColors.put("bg_yellow", Color.rgb(255, 255, 0));
+    defaultBackgroundColors.put("bg_magenta", Color.rgb(255, 0, 255));
+    defaultBackgroundColors.put("bg_blue", Color.rgb(0, 0, 255));
+    defaultBackgroundColors.put("bg_black", Color.rgb(0, 0, 0));
+    DEFAULT_BACKGROUND_COLORS = Collections.unmodifiableMap(defaultBackgroundColors);
+  }
 
   /**
    * Parses the next valid WebVTT cue in a parsable array, including timestamps, settings and text.
@@ -291,14 +332,16 @@ public final class WebvttCueParser {
     WebvttCueInfoBuilder builder = new WebvttCueInfoBuilder();
     try {
       // Parse the cue start and end times.
-      builder.startTimeUs = WebvttParserUtil.parseTimestampUs(cueHeaderMatcher.group(1));
-      builder.endTimeUs = WebvttParserUtil.parseTimestampUs(cueHeaderMatcher.group(2));
+      builder.startTimeUs =
+          WebvttParserUtil.parseTimestampUs(Assertions.checkNotNull(cueHeaderMatcher.group(1)));
+      builder.endTimeUs =
+          WebvttParserUtil.parseTimestampUs(Assertions.checkNotNull(cueHeaderMatcher.group(2)));
     } catch (NumberFormatException e) {
       Log.w(TAG, "Skipping cue with bad header: " + cueHeaderMatcher.group());
       return null;
     }
 
-    parseCueSettingsList(cueHeaderMatcher.group(3), builder);
+    parseCueSettingsList(Assertions.checkNotNull(cueHeaderMatcher.group(3)), builder);
 
     // Parse the cue text.
     StringBuilder textBuilder = new StringBuilder();
@@ -319,8 +362,8 @@ public final class WebvttCueParser {
     Matcher cueSettingMatcher = CUE_SETTING_PATTERN.matcher(cueSettingsList);
 
     while (cueSettingMatcher.find()) {
-      String name = cueSettingMatcher.group(1);
-      String value = cueSettingMatcher.group(2);
+      String name = Assertions.checkNotNull(cueSettingMatcher.group(1));
+      String value = Assertions.checkNotNull(cueSettingMatcher.group(2));
       try {
         if ("line".equals(name)) {
           parseLineAttribute(value, builder);
@@ -488,32 +531,14 @@ public final class WebvttCueParser {
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         break;
       case TAG_RUBY:
-        @Nullable Element rubyTextElement = null;
-        for (int i = 0; i < nestedElements.size(); i++) {
-          if (TAG_RUBY_TEXT.equals(nestedElements.get(i).startTag.name)) {
-            rubyTextElement = nestedElements.get(i);
-            // Behaviour of multiple <rt> tags inside <ruby> is undefined, so use the first one.
-            break;
-          }
-        }
-        if (rubyTextElement == null) {
-          break;
-        }
-        // Move the rubyText from spannedText into the RubySpan.
-        CharSequence rubyText =
-            text.subSequence(rubyTextElement.startTag.position, rubyTextElement.endPosition);
-        text.delete(rubyTextElement.startTag.position, rubyTextElement.endPosition);
-        end -= rubyText.length();
-        text.setSpan(
-            new RubySpan(rubyText.toString(), RubySpan.POSITION_OVER),
-            start,
-            end,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        applyRubySpans(nestedElements, text, start);
         break;
       case TAG_UNDERLINE:
         text.setSpan(new UnderlineSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         break;
       case TAG_CLASS:
+        applyDefaultColors(text, startTag.classes, start, end);
+        break;
       case TAG_LANG:
       case TAG_VOICE:
       case "": // Case of the "whole cue" virtual tag.
@@ -526,6 +551,54 @@ public final class WebvttCueParser {
     int styleMatchesCount = scratchStyleMatches.size();
     for (int i = 0; i < styleMatchesCount; i++) {
       applyStyleToText(text, scratchStyleMatches.get(i).style, start, end);
+    }
+  }
+
+  private static void applyRubySpans(
+      List<Element> nestedElements, SpannableStringBuilder text, int startTagPosition) {
+    List<Element> sortedNestedElements = new ArrayList<>(nestedElements.size());
+    sortedNestedElements.addAll(nestedElements);
+    Collections.sort(sortedNestedElements, Element.BY_START_POSITION_ASC);
+    int deletedCharCount = 0;
+    int lastRubyTextEnd = startTagPosition;
+    for (int i = 0; i < sortedNestedElements.size(); i++) {
+      if (!TAG_RUBY_TEXT.equals(sortedNestedElements.get(i).startTag.name)) {
+        continue;
+      }
+      Element rubyTextElement = sortedNestedElements.get(i);
+      // Move the rubyText from spannedText into the RubySpan.
+      int adjustedRubyTextStart = rubyTextElement.startTag.position - deletedCharCount;
+      int adjustedRubyTextEnd = rubyTextElement.endPosition - deletedCharCount;
+      CharSequence rubyText = text.subSequence(adjustedRubyTextStart, adjustedRubyTextEnd);
+      text.delete(adjustedRubyTextStart, adjustedRubyTextEnd);
+      text.setSpan(
+          new RubySpan(rubyText.toString(), RubySpan.POSITION_OVER),
+          lastRubyTextEnd,
+          adjustedRubyTextStart,
+          Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+      deletedCharCount += rubyText.length();
+      // The ruby text has been deleted, so new-start == old-end.
+      lastRubyTextEnd = adjustedRubyTextStart;
+    }
+  }
+
+  /**
+   * Adds {@link ForegroundColorSpan}s and {@link BackgroundColorSpan}s to {@code text} for entries
+   * in {@code classes} that match WebVTT's <a
+   * href="https://www.w3.org/TR/webvtt1/#default-text-color">default text colors</a> or <a
+   * href="https://www.w3.org/TR/webvtt1/#default-text-background">default text background
+   * colors</a>.
+   */
+  private static void applyDefaultColors(
+      SpannableStringBuilder text, String[] classes, int start, int end) {
+    for (String className : classes) {
+      if (DEFAULT_TEXT_COLORS.containsKey(className)) {
+        int color = DEFAULT_TEXT_COLORS.get(className);
+        text.setSpan(new ForegroundColorSpan(color), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+      } else if (DEFAULT_BACKGROUND_COLORS.containsKey(className)) {
+        int color = DEFAULT_BACKGROUND_COLORS.get(className);
+        text.setSpan(new BackgroundColorSpan(color), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+      }
     }
   }
 
@@ -803,7 +876,7 @@ public final class WebvttCueParser {
     }
 
     @Override
-    public int compareTo(@NonNull StyleMatch another) {
+    public int compareTo(StyleMatch another) {
       return this.score - another.score;
     }
 
@@ -855,6 +928,9 @@ public final class WebvttCueParser {
 
   /** Information about a complete element (i.e. start tag and end position). */
   private static class Element {
+    private static final Comparator<Element> BY_START_POSITION_ASC =
+        (e1, e2) -> Integer.compare(e1.startTag.position, e2.startTag.position);
+
     private final StartTag startTag;
     /**
      * The position of the end of this element's text in the un-marked-up cue text (i.e. the
