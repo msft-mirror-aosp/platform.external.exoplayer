@@ -32,36 +32,24 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.C.ContentType;
 import com.google.android.exoplayer2.ExoPlaybackException;
-import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackPreparer;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.RenderersFactory;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.audio.AudioAttributes;
 import com.google.android.exoplayer2.demo.Sample.UriSample;
-import com.google.android.exoplayer2.drm.DefaultDrmSessionManager;
-import com.google.android.exoplayer2.drm.DrmSessionManager;
-import com.google.android.exoplayer2.drm.ExoMediaCrypto;
-import com.google.android.exoplayer2.drm.FrameworkMediaDrm;
-import com.google.android.exoplayer2.drm.HttpMediaDrmCallback;
-import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.mediacodec.MediaCodecRenderer.DecoderInitializationException;
 import com.google.android.exoplayer2.mediacodec.MediaCodecUtil.DecoderQueryException;
 import com.google.android.exoplayer2.offline.DownloadHelper;
 import com.google.android.exoplayer2.offline.DownloadRequest;
 import com.google.android.exoplayer2.source.BehindLiveWindowException;
+import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
 import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.MediaSourceFactory;
-import com.google.android.exoplayer2.source.MergingMediaSource;
-import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.source.SingleSampleMediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.source.ads.AdsLoader;
 import com.google.android.exoplayer2.source.ads.AdsMediaSource;
-import com.google.android.exoplayer2.source.dash.DashMediaSource;
-import com.google.android.exoplayer2.source.hls.HlsMediaSource;
-import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector.MappedTrackInfo;
@@ -74,6 +62,7 @@ import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.ui.spherical.SphericalGLSurfaceView;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
+import com.google.android.exoplayer2.util.Assertions;
 import com.google.android.exoplayer2.util.ErrorMessageProvider;
 import com.google.android.exoplayer2.util.EventLogger;
 import com.google.android.exoplayer2.util.Util;
@@ -136,6 +125,7 @@ public class PlayerActivity extends AppCompatActivity
   private static final String KEY_AUTO_PLAY = "auto_play";
 
   private static final CookieManager DEFAULT_COOKIE_MANAGER;
+
   static {
     DEFAULT_COOKIE_MANAGER = new CookieManager();
     DEFAULT_COOKIE_MANAGER.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER);
@@ -154,7 +144,7 @@ public class PlayerActivity extends AppCompatActivity
   private DefaultTrackSelector.Parameters trackSelectorParameters;
   private DebugTextViewHelper debugViewHelper;
   private TrackGroupArray lastSeenTrackGroupArray;
-
+  private DefaultMediaSourceFactory mediaSourceFactory;
   private boolean startAutoPlay;
   private int startWindow;
   private long startPosition;
@@ -175,6 +165,8 @@ public class PlayerActivity extends AppCompatActivity
     }
     super.onCreate(savedInstanceState);
     dataSourceFactory = buildDataSourceFactory();
+    mediaSourceFactory =
+        DefaultMediaSourceFactory.newInstance(/* context= */ this, dataSourceFactory);
     if (CookieHandler.getDefault() != DEFAULT_COOKIE_MANAGER) {
       CookieHandler.setDefault(DEFAULT_COOKIE_MANAGER);
     }
@@ -282,8 +274,9 @@ public class PlayerActivity extends AppCompatActivity
   }
 
   @Override
-  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-      @NonNull int[] grantResults) {
+  public void onRequestPermissionsResult(
+      int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     if (grantResults.length == 0) {
       // Empty results are triggered if a permission is requested while another request was already
       // pending and can be safely ignored in this case.
@@ -298,7 +291,7 @@ public class PlayerActivity extends AppCompatActivity
   }
 
   @Override
-  public void onSaveInstanceState(Bundle outState) {
+  public void onSaveInstanceState(@NonNull Bundle outState) {
     super.onSaveInstanceState(outState);
     updateTrackSelectorParameters();
     updateStartPosition();
@@ -381,6 +374,7 @@ public class PlayerActivity extends AppCompatActivity
               .setTrackSelector(trackSelector)
               .build();
       player.addListener(new PlayerEventListener());
+      player.setAudioAttributes(AudioAttributes.DEFAULT, /* handleAudioFocus= */ true);
       player.setPlayWhenReady(startAutoPlay);
       player.addAnalyticsListener(new EventLogger(trackSelector));
       playerView.setPlayer(player);
@@ -415,47 +409,29 @@ public class PlayerActivity extends AppCompatActivity
             ? ((Sample.PlaylistSample) intentAsSample).children
             : new UriSample[] {(UriSample) intentAsSample};
 
-    boolean seenAdsTagUri = false;
+    List<MediaSource> mediaSources = new ArrayList<>();
+    Uri adTagUri = null;
     for (UriSample sample : samples) {
-      seenAdsTagUri |= sample.adTagUri != null;
-      if (!Util.checkCleartextTrafficPermitted(sample.uri)) {
+      MediaItem mediaItem = sample.toMediaItem();
+      Assertions.checkNotNull(mediaItem.playbackProperties);
+      if (!Util.checkCleartextTrafficPermitted(mediaItem)) {
         showToast(R.string.error_cleartext_not_permitted);
         return Collections.emptyList();
       }
-      if (Util.maybeRequestReadExternalStoragePermission(/* activity= */ this, sample.uri)) {
+      if (Util.maybeRequestReadExternalStoragePermission(/* activity= */ this, mediaItem)) {
         // The player will be reinitialized if the permission is granted.
         return Collections.emptyList();
       }
+      MediaSource mediaSource = createLeafMediaSource(mediaItem);
+      if (mediaSource != null) {
+        adTagUri = sample.adTagUri;
+        mediaSources.add(mediaSource);
+      }
     }
 
-    List<MediaSource> mediaSources = new ArrayList<>();
-    for (UriSample sample : samples) {
-      MediaSource mediaSource = createLeafMediaSource(sample);
-      if (mediaSource == null) {
-        continue;
-      }
-      Sample.SubtitleInfo subtitleInfo = sample.subtitleInfo;
-      if (subtitleInfo != null) {
-        if (Util.maybeRequestReadExternalStoragePermission(
-            /* activity= */ this, subtitleInfo.uri)) {
-          // The player will be reinitialized if the permission is granted.
-          return Collections.emptyList();
-        }
-        Format subtitleFormat =
-            Format.createTextSampleFormat(
-                /* id= */ null,
-                subtitleInfo.mimeType,
-                C.SELECTION_FLAG_DEFAULT,
-                subtitleInfo.language);
-        MediaSource subtitleMediaSource =
-            new SingleSampleMediaSource.Factory(dataSourceFactory)
-                .createMediaSource(subtitleInfo.uri, subtitleFormat, C.TIME_UNSET);
-        mediaSource = new MergingMediaSource(mediaSource, subtitleMediaSource);
-      }
-      mediaSources.add(mediaSource);
-    }
-    if (seenAdsTagUri && mediaSources.size() == 1) {
-      Uri adTagUri = samples[0].adTagUri;
+    if (adTagUri == null) {
+      releaseAdsLoader();
+    } else if (mediaSources.size() == 1) {
       if (!adTagUri.equals(loadedAdTagUri)) {
         releaseAdsLoader();
         loadedAdTagUri = adTagUri;
@@ -466,10 +442,8 @@ public class PlayerActivity extends AppCompatActivity
       } else {
         showToast(R.string.ima_not_loaded);
       }
-    } else if (seenAdsTagUri && mediaSources.size() > 1) {
+    } else if (mediaSources.size() > 1) {
       showToast(R.string.unsupported_ads_in_concatenation);
-      releaseAdsLoader();
-    } else {
       releaseAdsLoader();
     }
 
@@ -477,81 +451,33 @@ public class PlayerActivity extends AppCompatActivity
   }
 
   @Nullable
-  private MediaSource createLeafMediaSource(UriSample parameters) {
-    Sample.DrmInfo drmInfo = parameters.drmInfo;
-    int errorStringId = R.string.error_drm_unknown;
-    DrmSessionManager<ExoMediaCrypto> drmSessionManager = null;
-    if (drmInfo == null) {
-      drmSessionManager = DrmSessionManager.getDummyDrmSessionManager();
-    } else if (Util.SDK_INT < 18) {
-      errorStringId = R.string.error_drm_unsupported_before_api_18;
-    } else if (!MediaDrm.isCryptoSchemeSupported(drmInfo.drmScheme)) {
-      errorStringId = R.string.error_drm_unsupported_scheme;
-    } else {
-      MediaDrmCallback mediaDrmCallback =
-          createMediaDrmCallback(drmInfo.drmLicenseUrl, drmInfo.drmKeyRequestProperties);
-      drmSessionManager =
-          new DefaultDrmSessionManager.Builder()
-              .setUuidAndExoMediaDrmProvider(drmInfo.drmScheme, FrameworkMediaDrm.DEFAULT_PROVIDER)
-              .setMultiSession(drmInfo.drmMultiSession)
-              .setUseDrmSessionsForClearContent(drmInfo.drmSessionForClearTypes)
-              .build(mediaDrmCallback);
-    }
-
-    if (drmSessionManager == null) {
-      showToast(errorStringId);
-      finish();
-      return null;
+  private MediaSource createLeafMediaSource(MediaItem mediaItem) {
+    Assertions.checkNotNull(mediaItem.playbackProperties);
+    HttpDataSource.Factory drmDataSourceFactory = null;
+    if (mediaItem.playbackProperties.drmConfiguration != null) {
+      if (Util.SDK_INT < 18) {
+        showToast(R.string.error_drm_unsupported_before_api_18);
+        finish();
+        return null;
+      } else if (!MediaDrm.isCryptoSchemeSupported(
+          mediaItem.playbackProperties.drmConfiguration.uuid)) {
+        showToast(R.string.error_drm_unsupported_scheme);
+        finish();
+        return null;
+      }
+      drmDataSourceFactory = ((DemoApplication) getApplication()).buildHttpDataSourceFactory();
     }
 
     DownloadRequest downloadRequest =
         ((DemoApplication) getApplication())
             .getDownloadTracker()
-            .getDownloadRequest(parameters.uri);
+            .getDownloadRequest(mediaItem.playbackProperties.sourceUri);
     if (downloadRequest != null) {
       return DownloadHelper.createMediaSource(downloadRequest, dataSourceFactory);
     }
-    return createLeafMediaSource(parameters.uri, parameters.extension, drmSessionManager);
-  }
-
-  private MediaSource createLeafMediaSource(
-      Uri uri, String extension, DrmSessionManager<?> drmSessionManager) {
-    @ContentType int type = Util.inferContentType(uri, extension);
-    switch (type) {
-      case C.TYPE_DASH:
-        return new DashMediaSource.Factory(dataSourceFactory)
-            .setDrmSessionManager(drmSessionManager)
-            .createMediaSource(uri);
-      case C.TYPE_SS:
-        return new SsMediaSource.Factory(dataSourceFactory)
-            .setDrmSessionManager(drmSessionManager)
-            .createMediaSource(uri);
-      case C.TYPE_HLS:
-        return new HlsMediaSource.Factory(dataSourceFactory)
-            .setDrmSessionManager(drmSessionManager)
-            .createMediaSource(uri);
-      case C.TYPE_OTHER:
-        return new ProgressiveMediaSource.Factory(dataSourceFactory)
-            .setDrmSessionManager(drmSessionManager)
-            .createMediaSource(uri);
-      default:
-        throw new IllegalStateException("Unsupported type: " + type);
-    }
-  }
-
-  private HttpMediaDrmCallback createMediaDrmCallback(
-      String licenseUrl, String[] keyRequestPropertiesArray) {
-    HttpDataSource.Factory licenseDataSourceFactory =
-        ((DemoApplication) getApplication()).buildHttpDataSourceFactory();
-    HttpMediaDrmCallback drmCallback =
-        new HttpMediaDrmCallback(licenseUrl, licenseDataSourceFactory);
-    if (keyRequestPropertiesArray != null) {
-      for (int i = 0; i < keyRequestPropertiesArray.length - 1; i += 2) {
-        drmCallback.setKeyRequestProperty(keyRequestPropertiesArray[i],
-            keyRequestPropertiesArray[i + 1]);
-      }
-    }
-    return drmCallback;
+    return mediaSourceFactory
+        .setDrmHttpDataSourceFactory(drmDataSourceFactory)
+        .createMediaSource(mediaItem);
   }
 
   private void releasePlayer() {
@@ -562,7 +488,7 @@ public class PlayerActivity extends AppCompatActivity
       debugViewHelper = null;
       player.release();
       player = null;
-      mediaSources = null;
+      mediaSources = Collections.emptyList();
       trackSelector = null;
     }
     if (adsLoader != null) {
@@ -621,30 +547,7 @@ public class PlayerActivity extends AppCompatActivity
         // LINT.ThenChange(../../../../../../../../proguard-rules.txt)
         adsLoader = loaderConstructor.newInstance(this, adTagUri);
       }
-      MediaSourceFactory adMediaSourceFactory =
-          new MediaSourceFactory() {
-
-            private DrmSessionManager<?> drmSessionManager =
-                DrmSessionManager.getDummyDrmSessionManager();
-
-            @Override
-            public MediaSourceFactory setDrmSessionManager(DrmSessionManager<?> drmSessionManager) {
-              this.drmSessionManager = drmSessionManager;
-              return this;
-            }
-
-            @Override
-            public MediaSource createMediaSource(Uri uri) {
-              return PlayerActivity.this.createLeafMediaSource(
-                  uri, /* extension=*/ null, drmSessionManager);
-            }
-
-            @Override
-            public int[] getSupportedTypes() {
-              return new int[] {C.TYPE_DASH, C.TYPE_SS, C.TYPE_HLS, C.TYPE_OTHER};
-            }
-          };
-      return new AdsMediaSource(mediaSource, adMediaSourceFactory, adsLoader, playerView);
+      return new AdsMediaSource(mediaSource, mediaSourceFactory, adsLoader, playerView);
     } catch (ClassNotFoundException e) {
       // IMA extension not loaded.
       return null;
@@ -689,7 +592,7 @@ public class PlayerActivity extends AppCompatActivity
   private class PlayerEventListener implements Player.EventListener {
 
     @Override
-    public void onPlayerStateChanged(boolean playWhenReady, @Player.State int playbackState) {
+    public void onPlaybackStateChanged(@Player.State int playbackState) {
       if (playbackState == Player.STATE_ENDED) {
         showControls();
       }
@@ -697,7 +600,7 @@ public class PlayerActivity extends AppCompatActivity
     }
 
     @Override
-    public void onPlayerError(ExoPlaybackException e) {
+    public void onPlayerError(@NonNull ExoPlaybackException e) {
       if (isBehindLiveWindow(e)) {
         clearStartPosition();
         initializePlayer();
@@ -709,7 +612,8 @@ public class PlayerActivity extends AppCompatActivity
 
     @Override
     @SuppressWarnings("ReferenceEquality")
-    public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+    public void onTracksChanged(
+        @NonNull TrackGroupArray trackGroups, @NonNull TrackSelectionArray trackSelections) {
       updateButtonVisibility();
       if (trackGroups != lastSeenTrackGroupArray) {
         MappedTrackInfo mappedTrackInfo = trackSelector.getCurrentMappedTrackInfo();
@@ -731,7 +635,8 @@ public class PlayerActivity extends AppCompatActivity
   private class PlayerErrorMessageProvider implements ErrorMessageProvider<ExoPlaybackException> {
 
     @Override
-    public Pair<Integer, String> getErrorMessage(ExoPlaybackException e) {
+    @NonNull
+    public Pair<Integer, String> getErrorMessage(@NonNull ExoPlaybackException e) {
       String errorString = getString(R.string.error_generic);
       if (e.type == ExoPlaybackException.TYPE_RENDERER) {
         Exception cause = e.getRendererException();

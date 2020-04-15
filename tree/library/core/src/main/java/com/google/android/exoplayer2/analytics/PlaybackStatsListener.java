@@ -20,7 +20,6 @@ import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.Format;
-import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.Timeline.Period;
@@ -51,7 +50,7 @@ import java.util.Map;
  * <p>For accurate measurements, the listener should be added to the player before loading media,
  * i.e., {@link Player#getPlaybackState()} should be {@link Player#STATE_IDLE}.
  *
- * <p>Playback stats are gathered separately for all playback session, i.e. each window in the
+ * <p>Playback stats are gathered separately for each playback session, i.e. each window in the
  * {@link Timeline} and each single ad.
  */
 public final class PlaybackStatsListener
@@ -133,6 +132,7 @@ public final class PlaybackStatsListener
    */
   @Nullable
   public PlaybackStats getPlaybackStats() {
+    @Nullable
     PlaybackStatsTracker activeStatsTracker =
         activeAdPlayback != null
             ? playbackStatsTrackers.get(activeAdPlayback)
@@ -173,8 +173,8 @@ public final class PlaybackStatsListener
     if (isSeeking) {
       tracker.onSeekStarted(eventTime, /* belongsToPlayback= */ true);
     }
-    tracker.onPlayerStateChanged(
-        eventTime, playWhenReady, playbackState, /* belongsToPlayback= */ true);
+    tracker.onPlaybackStateChanged(eventTime, playbackState, /* belongsToPlayback= */ true);
+    tracker.onPlayWhenReadyChanged(eventTime, playWhenReady, /* belongsToPlayback= */ true);
     tracker.onIsSuppressedChanged(eventTime, isSuppressed, /* belongsToPlayback= */ true);
     tracker.onPlaybackSpeedChanged(eventTime, playbackSpeed);
     playbackStatsTrackers.put(session, tracker);
@@ -194,11 +194,15 @@ public final class PlaybackStatsListener
   @Override
   public void onAdPlaybackStarted(EventTime eventTime, String contentSession, String adSession) {
     Assertions.checkState(Assertions.checkNotNull(eventTime.mediaPeriodId).isAd());
-    long contentPositionUs =
+    long contentPeriodPositionUs =
         eventTime
             .timeline
             .getPeriodByUid(eventTime.mediaPeriodId.periodUid, period)
             .getAdGroupTimeUs(eventTime.mediaPeriodId.adGroupIndex);
+    long contentWindowPositionUs =
+        contentPeriodPositionUs == C.TIME_END_OF_SOURCE
+            ? C.TIME_END_OF_SOURCE
+            : contentPeriodPositionUs + period.getPositionInWindowUs();
     EventTime contentEventTime =
         new EventTime(
             eventTime.realtimeMs,
@@ -208,7 +212,7 @@ public final class PlaybackStatsListener
                 eventTime.mediaPeriodId.periodUid,
                 eventTime.mediaPeriodId.windowSequenceNumber,
                 eventTime.mediaPeriodId.adGroupIndex),
-            /* eventPlaybackPositionMs= */ C.usToMs(contentPositionUs),
+            /* eventPlaybackPositionMs= */ C.usToMs(contentWindowPositionUs),
             eventTime.currentPlaybackPositionMs,
             eventTime.totalBufferedDurationMs);
     Assertions.checkNotNull(playbackStatsTrackers.get(contentSession))
@@ -226,8 +230,7 @@ public final class PlaybackStatsListener
     EventTime startEventTime = Assertions.checkNotNull(sessionStartEventTimes.remove(session));
     if (automaticTransition) {
       // Simulate ENDED state to record natural ending of playback.
-      tracker.onPlayerStateChanged(
-          eventTime, /* playWhenReady= */ true, Player.STATE_ENDED, /* belongsToPlayback= */ false);
+      tracker.onPlaybackStateChanged(eventTime, Player.STATE_ENDED, /* belongsToPlayback= */ false);
     }
     tracker.onFinished(eventTime);
     PlaybackStats playbackStats = tracker.build(/* isFinal= */ true);
@@ -240,16 +243,27 @@ public final class PlaybackStatsListener
   // AnalyticsListener implementation.
 
   @Override
-  public void onPlayerStateChanged(
-      EventTime eventTime, boolean playWhenReady, @Player.State int playbackState) {
-    this.playWhenReady = playWhenReady;
-    this.playbackState = playbackState;
+  public void onPlaybackStateChanged(EventTime eventTime, @Player.State int state) {
+    playbackState = state;
     sessionManager.updateSessions(eventTime);
     for (String session : playbackStatsTrackers.keySet()) {
       boolean belongsToPlayback = sessionManager.belongsToSession(eventTime, session);
       playbackStatsTrackers
           .get(session)
-          .onPlayerStateChanged(eventTime, playWhenReady, playbackState, belongsToPlayback);
+          .onPlaybackStateChanged(eventTime, playbackState, belongsToPlayback);
+    }
+  }
+
+  @Override
+  public void onPlayWhenReadyChanged(
+      EventTime eventTime, boolean playWhenReady, @Player.PlayWhenReadyChangeReason int reason) {
+    this.playWhenReady = playWhenReady;
+    sessionManager.updateSessions(eventTime);
+    for (String session : playbackStatsTrackers.keySet()) {
+      boolean belongsToPlayback = sessionManager.belongsToSession(eventTime, session);
+      playbackStatsTrackers
+          .get(session)
+          .onPlayWhenReadyChanged(eventTime, playWhenReady, belongsToPlayback);
     }
   }
 
@@ -319,9 +333,8 @@ public final class PlaybackStatsListener
   }
 
   @Override
-  public void onPlaybackParametersChanged(
-      EventTime eventTime, PlaybackParameters playbackParameters) {
-    playbackSpeed = playbackParameters.speed;
+  public void onPlaybackSpeedChanged(EventTime eventTime, float playbackSpeed) {
+    this.playbackSpeed = playbackSpeed;
     sessionManager.updateSessions(eventTime);
     for (PlaybackStatsTracker tracker : playbackStatsTrackers.values()) {
       tracker.onPlaybackSpeedChanged(eventTime, playbackSpeed);
@@ -518,27 +531,36 @@ public final class PlaybackStatsListener
     }
 
     /**
-     * Notifies the tracker of a player state change event, including all player state changes while
-     * the playback is not in the foreground.
+     * Notifies the tracker of a playback state change event, including all playback state changes
+     * while the playback is not in the foreground.
+     *
+     * @param eventTime The {@link EventTime}.
+     * @param state The current {@link Player.State}.
+     * @param belongsToPlayback Whether the {@code eventTime} belongs to the current playback.
+     */
+    public void onPlaybackStateChanged(
+        EventTime eventTime, @Player.State int state, boolean belongsToPlayback) {
+      playerPlaybackState = state;
+      if (state != Player.STATE_IDLE) {
+        hasFatalError = false;
+      }
+      if (state == Player.STATE_IDLE || state == Player.STATE_ENDED) {
+        isInterruptedByAd = false;
+      }
+      maybeUpdatePlaybackState(eventTime, belongsToPlayback);
+    }
+
+    /**
+     * Notifies the tracker of a play when ready change event, including all play when ready changes
+     * while the playback is not in the foreground.
      *
      * @param eventTime The {@link EventTime}.
      * @param playWhenReady Whether the playback will proceed when ready.
-     * @param playbackState The current {@link Player.State}.
      * @param belongsToPlayback Whether the {@code eventTime} belongs to the current playback.
      */
-    public void onPlayerStateChanged(
-        EventTime eventTime,
-        boolean playWhenReady,
-        @Player.State int playbackState,
-        boolean belongsToPlayback) {
+    public void onPlayWhenReadyChanged(
+        EventTime eventTime, boolean playWhenReady, boolean belongsToPlayback) {
       this.playWhenReady = playWhenReady;
-      playerPlaybackState = playbackState;
-      if (playbackState != Player.STATE_IDLE) {
-        hasFatalError = false;
-      }
-      if (playbackState == Player.STATE_IDLE || playbackState == Player.STATE_ENDED) {
-        isInterruptedByAd = false;
-      }
       maybeUpdatePlaybackState(eventTime, belongsToPlayback);
     }
 
@@ -699,7 +721,8 @@ public final class PlaybackStatsListener
      */
     public void onVideoSizeChanged(EventTime eventTime, int width, int height) {
       if (currentVideoFormat != null && currentVideoFormat.height == Format.NO_VALUE) {
-        Format formatWithHeight = currentVideoFormat.copyWithVideoSize(width, height);
+        Format formatWithHeight =
+            currentVideoFormat.buildUpon().setWidth(width).setHeight(height).build();
         maybeUpdateVideoFormat(eventTime, formatWithHeight);
       }
     }
@@ -940,6 +963,9 @@ public final class PlaybackStatsListener
     }
 
     private void maybeUpdateMediaTimeHistory(long realtimeMs, long mediaTimeMs) {
+      if (!keepHistory) {
+        return;
+      }
       if (currentPlaybackState != PlaybackStats.PLAYBACK_STATE_PLAYING) {
         if (mediaTimeMs == C.TIME_UNSET) {
           return;
