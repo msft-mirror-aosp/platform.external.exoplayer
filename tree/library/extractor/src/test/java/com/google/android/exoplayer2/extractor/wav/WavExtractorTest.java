@@ -15,6 +15,7 @@
  */
 package com.google.android.exoplayer2.extractor.wav;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.exoplayer2.testutil.ExtractorAsserts;
 import org.junit.Test;
@@ -25,12 +26,21 @@ import org.junit.runner.RunWith;
 public final class WavExtractorTest {
 
   @Test
-  public void testSample() throws Exception {
+  public void sample() throws Exception {
     ExtractorAsserts.assertBehavior(WavExtractor::new, "wav/sample.wav");
   }
 
   @Test
-  public void testSampleImaAdpcm() throws Exception {
+  public void sample_withTrailingBytes_extractsSameData() throws Exception {
+    ExtractorAsserts.assertBehavior(
+        WavExtractor::new,
+        "wav/sample_with_trailing_bytes.wav",
+        ApplicationProvider.getApplicationContext(),
+        /* dumpFilesPrefix= */ "wav/sample.wav");
+  }
+
+  @Test
+  public void sample_imaAdpcm() throws Exception {
     ExtractorAsserts.assertBehavior(WavExtractor::new, "wav/sample_ima_adpcm.wav");
   }
 }
