@@ -21,6 +21,7 @@ import android.os.SystemClock;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayerLibraryInfo;
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.drm.DrmSession;
 import com.google.android.exoplayer2.drm.DrmSessionManager;
@@ -53,6 +54,7 @@ import com.google.android.exoplayer2.util.Assertions;
 import com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /** A SmoothStreaming {@link MediaSource}. */
@@ -70,11 +72,11 @@ public final class SsMediaSource extends BaseMediaSource
     @Nullable private final DataSource.Factory manifestDataSourceFactory;
 
     private CompositeSequenceableLoaderFactory compositeSequenceableLoaderFactory;
-    private DrmSessionManager<?> drmSessionManager;
+    private DrmSessionManager drmSessionManager;
     private LoadErrorHandlingPolicy loadErrorHandlingPolicy;
     private long livePresentationDelayMs;
     @Nullable private ParsingLoadable.Parser<? extends SsManifest> manifestParser;
-    @Nullable private List<StreamKey> streamKeys;
+    private List<StreamKey> streamKeys;
     @Nullable private Object tag;
 
     /**
@@ -105,15 +107,14 @@ public final class SsMediaSource extends BaseMediaSource
       loadErrorHandlingPolicy = new DefaultLoadErrorHandlingPolicy();
       livePresentationDelayMs = DEFAULT_LIVE_PRESENTATION_DELAY_MS;
       compositeSequenceableLoaderFactory = new DefaultCompositeSequenceableLoaderFactory();
+      streamKeys = Collections.emptyList();
     }
 
     /**
-     * Sets a tag for the media source which will be published in the {@link Timeline} of the source
-     * as {@link Timeline.Window#tag}.
-     *
-     * @param tag A tag for the media source.
-     * @return This factory, for convenience.
+     * @deprecated Use {@link MediaItem.Builder#setTag(Object)} and {@link
+     *     #createMediaSource(MediaItem)} instead.
      */
+    @Deprecated
     public Factory setTag(@Nullable Object tag) {
       this.tag = tag;
       return this;
@@ -196,7 +197,7 @@ public final class SsMediaSource extends BaseMediaSource
      * @return This factory, for convenience.
      */
     @Override
-    public Factory setDrmSessionManager(@Nullable DrmSessionManager<?> drmSessionManager) {
+    public Factory setDrmSessionManager(@Nullable DrmSessionManager drmSessionManager) {
       this.drmSessionManager =
           drmSessionManager != null
               ? drmSessionManager
@@ -204,10 +205,24 @@ public final class SsMediaSource extends BaseMediaSource
       return this;
     }
 
+    /**
+     * @deprecated Use {@link MediaItem.Builder#setStreamKeys(List)} and {@link
+     *     #createMediaSource(MediaItem)} instead.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
     @Override
-    public Factory setStreamKeys(List<StreamKey> streamKeys) {
-      this.streamKeys = streamKeys != null && !streamKeys.isEmpty() ? streamKeys : null;
+    public Factory setStreamKeys(@Nullable List<StreamKey> streamKeys) {
+      this.streamKeys = streamKeys != null ? streamKeys : Collections.emptyList();
       return this;
+    }
+
+    /** @deprecated Use {@link #createMediaSource(MediaItem)} instead. */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    @Override
+    public SsMediaSource createMediaSource(Uri uri) {
+      return createMediaSource(new MediaItem.Builder().setSourceUri(uri).build());
     }
 
     /**
@@ -220,7 +235,7 @@ public final class SsMediaSource extends BaseMediaSource
      */
     public SsMediaSource createMediaSource(SsManifest manifest) {
       Assertions.checkArgument(!manifest.isLive);
-      if (streamKeys != null) {
+      if (!streamKeys.isEmpty()) {
         manifest = manifest.copy(streamKeys);
       }
       return new SsMediaSource(
@@ -271,21 +286,27 @@ public final class SsMediaSource extends BaseMediaSource
     /**
      * Returns a new {@link SsMediaSource} using the current parameters.
      *
-     * @param manifestUri The manifest {@link Uri}.
+     * @param mediaItem The {@link MediaItem}.
      * @return The new {@link SsMediaSource}.
+     * @throws NullPointerException if {@link MediaItem#playbackProperties} is {@code null}.
      */
     @Override
-    public SsMediaSource createMediaSource(Uri manifestUri) {
+    public SsMediaSource createMediaSource(MediaItem mediaItem) {
+      Assertions.checkNotNull(mediaItem.playbackProperties);
       @Nullable ParsingLoadable.Parser<? extends SsManifest> manifestParser = this.manifestParser;
       if (manifestParser == null) {
         manifestParser = new SsManifestParser();
       }
-      if (streamKeys != null) {
+      List<StreamKey> streamKeys =
+          !mediaItem.playbackProperties.streamKeys.isEmpty()
+              ? mediaItem.playbackProperties.streamKeys
+              : this.streamKeys;
+      if (!streamKeys.isEmpty()) {
         manifestParser = new FilteringManifestParser<>(manifestParser, streamKeys);
       }
       return new SsMediaSource(
           /* manifest= */ null,
-          Assertions.checkNotNull(manifestUri),
+          mediaItem.playbackProperties.sourceUri,
           manifestDataSourceFactory,
           manifestParser,
           chunkSourceFactory,
@@ -293,7 +314,7 @@ public final class SsMediaSource extends BaseMediaSource
           drmSessionManager,
           loadErrorHandlingPolicy,
           livePresentationDelayMs,
-          tag);
+          mediaItem.playbackProperties.tag != null ? mediaItem.playbackProperties.tag : tag);
     }
 
     @Override
@@ -322,7 +343,7 @@ public final class SsMediaSource extends BaseMediaSource
   private final DataSource.Factory manifestDataSourceFactory;
   private final SsChunkSource.Factory chunkSourceFactory;
   private final CompositeSequenceableLoaderFactory compositeSequenceableLoaderFactory;
-  private final DrmSessionManager<?> drmSessionManager;
+  private final DrmSessionManager drmSessionManager;
   private final LoadErrorHandlingPolicy loadErrorHandlingPolicy;
   private final long livePresentationDelayMs;
   private final EventDispatcher manifestEventDispatcher;
@@ -505,7 +526,7 @@ public final class SsMediaSource extends BaseMediaSource
       @Nullable ParsingLoadable.Parser<? extends SsManifest> manifestParser,
       SsChunkSource.Factory chunkSourceFactory,
       CompositeSequenceableLoaderFactory compositeSequenceableLoaderFactory,
-      DrmSessionManager<?> drmSessionManager,
+      DrmSessionManager drmSessionManager,
       LoadErrorHandlingPolicy loadErrorHandlingPolicy,
       long livePresentationDelayMs,
       @Nullable Object tag) {
@@ -597,8 +618,8 @@ public final class SsMediaSource extends BaseMediaSource
   // Loader.Callback implementation
 
   @Override
-  public void onLoadCompleted(ParsingLoadable<SsManifest> loadable, long elapsedRealtimeMs,
-      long loadDurationMs) {
+  public void onLoadCompleted(
+      ParsingLoadable<SsManifest> loadable, long elapsedRealtimeMs, long loadDurationMs) {
     manifestEventDispatcher.loadCompleted(
         loadable.dataSpec,
         loadable.getUri(),
@@ -614,8 +635,11 @@ public final class SsMediaSource extends BaseMediaSource
   }
 
   @Override
-  public void onLoadCanceled(ParsingLoadable<SsManifest> loadable, long elapsedRealtimeMs,
-      long loadDurationMs, boolean released) {
+  public void onLoadCanceled(
+      ParsingLoadable<SsManifest> loadable,
+      long elapsedRealtimeMs,
+      long loadDurationMs,
+      boolean released) {
     manifestEventDispatcher.loadCanceled(
         loadable.dataSpec,
         loadable.getUri(),

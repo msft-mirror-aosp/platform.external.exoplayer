@@ -34,13 +34,43 @@ import android.content.Intent;
 import android.net.Uri;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.util.Assertions;
+import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.Util;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.UUID;
 
 /* package */ abstract class Sample {
+
+  /**
+   * Returns the mime type which is one of {@link MimeTypes#APPLICATION_MPD} for DASH, {@link
+   * MimeTypes#APPLICATION_M3U8} for HLS, {@link MimeTypes#APPLICATION_SS} for SmoothStreaming or
+   * {@code null} for all other streams.
+   *
+   * @param uri The uri of the stream.
+   * @param extension The extension
+   * @return The adaptive mime type or {@code null} for non-adaptive streams.
+   */
+  @Nullable
+  public static String inferAdaptiveStreamMimeType(Uri uri, @Nullable String extension) {
+    @C.ContentType int contentType = Util.inferContentType(uri, extension);
+    switch (contentType) {
+      case C.TYPE_DASH:
+        return MimeTypes.APPLICATION_MPD;
+      case C.TYPE_HLS:
+        return MimeTypes.APPLICATION_M3U8;
+      case C.TYPE_SS:
+        return MimeTypes.APPLICATION_SS;
+      case C.TYPE_OTHER:
+      default:
+        return null;
+    }
+  }
 
   public static final class UriSample extends Sample {
 
@@ -113,6 +143,35 @@ import java.util.UUID;
       if (subtitleInfo != null) {
         subtitleInfo.addToIntent(intent, extrasKeySuffix);
       }
+    }
+
+    public MediaItem toMediaItem() {
+      MediaItem.Builder builder = new MediaItem.Builder().setSourceUri(uri);
+      builder.setMimeType(inferAdaptiveStreamMimeType(uri, extension));
+      if (drmInfo != null) {
+        Map<String, String> headers = new HashMap<>();
+        if (drmInfo.drmKeyRequestProperties != null) {
+          for (int i = 0; i < drmInfo.drmKeyRequestProperties.length; i += 2) {
+            headers.put(drmInfo.drmKeyRequestProperties[i], drmInfo.drmKeyRequestProperties[i + 1]);
+          }
+        }
+        builder
+            .setDrmLicenseUri(drmInfo.drmLicenseUrl)
+            .setDrmLicenseRequestHeaders(headers)
+            .setDrmUuid(drmInfo.drmScheme)
+            .setDrmMultiSession(drmInfo.drmMultiSession)
+            .setDrmSessionForClearTypes(Util.toList(drmInfo.drmSessionForClearTypes));
+      }
+      if (subtitleInfo != null) {
+        builder.setSubtitles(
+            Collections.singletonList(
+                new MediaItem.Subtitle(
+                    subtitleInfo.uri,
+                    subtitleInfo.mimeType,
+                    subtitleInfo.language,
+                    C.SELECTION_FLAG_DEFAULT)));
+      }
+      return builder.build();
     }
   }
 
@@ -267,7 +326,7 @@ import java.util.UUID;
     }
   }
 
-  @Nullable public final String name;
+  public final String name;
 
   public Sample(String name) {
     this.name = name;
