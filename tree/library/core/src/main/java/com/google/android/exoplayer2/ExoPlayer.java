@@ -24,8 +24,10 @@ import com.google.android.exoplayer2.audio.MediaCodecAudioRenderer;
 import com.google.android.exoplayer2.metadata.MetadataRenderer;
 import com.google.android.exoplayer2.source.ClippingMediaSource;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
+import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
 import com.google.android.exoplayer2.source.LoopingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.MediaSourceFactory;
 import com.google.android.exoplayer2.source.MergingMediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.ShuffleOrder;
@@ -138,6 +140,7 @@ public interface ExoPlayer extends Player {
 
     private Clock clock;
     private TrackSelector trackSelector;
+    private MediaSourceFactory mediaSourceFactory;
     private LoadControl loadControl;
     private BandwidthMeter bandwidthMeter;
     private Looper looper;
@@ -146,6 +149,7 @@ public interface ExoPlayer extends Player {
     private boolean buildCalled;
 
     private long releaseTimeoutMs;
+    private boolean throwWhenStuckBuffering;
 
     /**
      * Creates a builder with a list of {@link Renderer Renderers}.
@@ -154,6 +158,7 @@ public interface ExoPlayer extends Player {
      *
      * <ul>
      *   <li>{@link TrackSelector}: {@link DefaultTrackSelector}
+     *   <li>{@link MediaSourceFactory}: {@link DefaultMediaSourceFactory}
      *   <li>{@link LoadControl}: {@link DefaultLoadControl}
      *   <li>{@link BandwidthMeter}: {@link DefaultBandwidthMeter#getSingletonInstance(Context)}
      *   <li>{@link Looper}: The {@link Looper} associated with the current thread, or the {@link
@@ -171,6 +176,7 @@ public interface ExoPlayer extends Player {
       this(
           renderers,
           new DefaultTrackSelector(context),
+          DefaultMediaSourceFactory.newInstance(context),
           new DefaultLoadControl(),
           DefaultBandwidthMeter.getSingletonInstance(context),
           Util.getLooper(),
@@ -188,6 +194,7 @@ public interface ExoPlayer extends Player {
      *
      * @param renderers The {@link Renderer Renderers} to be used by the player.
      * @param trackSelector A {@link TrackSelector}.
+     * @param mediaSourceFactory A {@link MediaSourceFactory}.
      * @param loadControl A {@link LoadControl}.
      * @param bandwidthMeter A {@link BandwidthMeter}.
      * @param looper A {@link Looper} that must be used for all calls to the player.
@@ -198,6 +205,7 @@ public interface ExoPlayer extends Player {
     public Builder(
         Renderer[] renderers,
         TrackSelector trackSelector,
+        MediaSourceFactory mediaSourceFactory,
         LoadControl loadControl,
         BandwidthMeter bandwidthMeter,
         Looper looper,
@@ -207,6 +215,7 @@ public interface ExoPlayer extends Player {
       Assertions.checkArgument(renderers.length > 0);
       this.renderers = renderers;
       this.trackSelector = trackSelector;
+      this.mediaSourceFactory = mediaSourceFactory;
       this.loadControl = loadControl;
       this.bandwidthMeter = bandwidthMeter;
       this.looper = looper;
@@ -220,13 +229,25 @@ public interface ExoPlayer extends Player {
      * ExoPlayer#release()} takes more than {@code timeoutMs} milliseconds to complete, the player
      * will raise an error via {@link Player.EventListener#onPlayerError}.
      *
-     * <p>This method is experimental, and will be renamed or removed in a future release. It should
-     * only be called before the player is used.
+     * <p>This method is experimental, and will be renamed or removed in a future release.
      *
      * @param timeoutMs The time limit in milliseconds, or 0 for no limit.
      */
     public Builder experimental_setReleaseTimeoutMs(long timeoutMs) {
       releaseTimeoutMs = timeoutMs;
+      return this;
+    }
+
+    /**
+     * Sets whether the player should throw when it detects it's stuck buffering.
+     *
+     * <p>This method is experimental, and will be renamed or removed in a future release.
+     *
+     * @param throwWhenStuckBuffering Whether to throw when the player detects it's stuck buffering.
+     * @return This builder.
+     */
+    public Builder experimental_setThrowWhenStuckBuffering(boolean throwWhenStuckBuffering) {
+      this.throwWhenStuckBuffering = throwWhenStuckBuffering;
       return this;
     }
 
@@ -240,6 +261,19 @@ public interface ExoPlayer extends Player {
     public Builder setTrackSelector(TrackSelector trackSelector) {
       Assertions.checkState(!buildCalled);
       this.trackSelector = trackSelector;
+      return this;
+    }
+
+    /**
+     * Sets the {@link MediaSourceFactory} that will be used by the player.
+     *
+     * @param mediaSourceFactory A {@link MediaSourceFactory}.
+     * @return This builder.
+     * @throws IllegalStateException If {@link #build()} has already been called.
+     */
+    public Builder setMediaSourceFactory(MediaSourceFactory mediaSourceFactory) {
+      Assertions.checkState(!buildCalled);
+      this.mediaSourceFactory = mediaSourceFactory;
       return this;
     }
 
@@ -331,7 +365,7 @@ public interface ExoPlayer extends Player {
     /**
      * Builds an {@link ExoPlayer} instance.
      *
-     * @throws IllegalStateException If {@link #build()} has already been called.
+     * @throws IllegalStateException If {@code build} has already been called.
      */
     public ExoPlayer build() {
       Assertions.checkState(!buildCalled);
@@ -340,6 +374,7 @@ public interface ExoPlayer extends Player {
           new ExoPlayerImpl(
               renderers,
               trackSelector,
+              mediaSourceFactory,
               loadControl,
               bandwidthMeter,
               analyticsCollector,
@@ -349,6 +384,9 @@ public interface ExoPlayer extends Player {
 
       if (releaseTimeoutMs > 0) {
         player.experimental_setReleaseTimeoutMs(releaseTimeoutMs);
+      }
+      if (throwWhenStuckBuffering) {
+        player.experimental_throwWhenStuckBuffering();
       }
 
       return player;
@@ -361,9 +399,6 @@ public interface ExoPlayer extends Player {
   /** @deprecated Use {@link #prepare()} instead. */
   @Deprecated
   void retry();
-
-  /** Prepares the player. */
-  void prepare();
 
   /** @deprecated Use {@link #setMediaSource(MediaSource)} and {@link #prepare()} instead. */
   @Deprecated
@@ -463,44 +498,6 @@ public interface ExoPlayer extends Player {
   void addMediaSources(int index, List<MediaSource> mediaSources);
 
   /**
-   * Moves the media item at the current index to the new index.
-   *
-   * @param currentIndex The current index of the media item to move.
-   * @param newIndex The new index of the media item. If the new index is larger than the size of
-   *     the playlist the item is moved to the end of the playlist.
-   */
-  void moveMediaItem(int currentIndex, int newIndex);
-
-  /**
-   * Moves the media item range to the new index.
-   *
-   * @param fromIndex The start of the range to move.
-   * @param toIndex The first item not to be included in the range (exclusive).
-   * @param newIndex The new index of the first media item of the range. If the new index is larger
-   *     than the size of the remaining playlist after removing the range, the range is moved to the
-   *     end of the playlist.
-   */
-  void moveMediaItems(int fromIndex, int toIndex, int newIndex);
-
-  /**
-   * Removes the media item at the given index of the playlist.
-   *
-   * @param index The index at which to remove the media item.
-   */
-  void removeMediaItem(int index);
-
-  /**
-   * Removes a range of media items from the playlist.
-   *
-   * @param fromIndex The index at which to start removing media items.
-   * @param toIndex The index of the first item to be kept (exclusive).
-   */
-  void removeMediaItems(int fromIndex, int toIndex);
-
-  /** Clears the playlist. */
-  void clearMediaItems();
-
-  /**
    * Sets the shuffle order.
    *
    * @param shuffleOrder The shuffle order.
@@ -557,4 +554,23 @@ public interface ExoPlayer extends Player {
    *     idle state.
    */
   void setForegroundMode(boolean foregroundMode);
+
+  /**
+   * Sets whether to pause playback at the end of each media item.
+   *
+   * <p>This means the player will pause at the end of each window in the current {@link
+   * #getCurrentTimeline() timeline}. Listeners will be informed by a call to {@link
+   * Player.EventListener#onPlayWhenReadyChanged(boolean, int)} with the reason {@link
+   * Player#PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM} when this happens.
+   *
+   * @param pauseAtEndOfMediaItems Whether to pause playback at the end of each media item.
+   */
+  void setPauseAtEndOfMediaItems(boolean pauseAtEndOfMediaItems);
+
+  /**
+   * Returns whether the player pauses playback at the end of each media item.
+   *
+   * @see #setPauseAtEndOfMediaItems(boolean)
+   */
+  boolean getPauseAtEndOfMediaItems();
 }
