@@ -42,16 +42,17 @@ public final class PsDurationReaderTest {
   }
 
   @Test
-  public void testIsDurationReadPending_returnFalseByDefault() {
+  public void isDurationReadPending_returnFalseByDefault() {
     assertThat(tsDurationReader.isDurationReadFinished()).isFalse();
   }
 
   @Test
-  public void testReadDuration_returnsCorrectDuration() throws IOException, InterruptedException {
+  public void readDuration_returnsCorrectDuration() throws IOException {
     FakeExtractorInput input =
         new FakeExtractorInput.Builder()
             .setData(
-                TestUtil.getByteArray(ApplicationProvider.getApplicationContext(), "ts/sample.ps"))
+                TestUtil.getByteArray(
+                    ApplicationProvider.getApplicationContext(), "ts/sample_h262_mpeg_audio.ps"))
             .build();
 
     int result = Extractor.RESULT_CONTINUE;
@@ -66,12 +67,12 @@ public final class PsDurationReaderTest {
   }
 
   @Test
-  public void testReadDuration_midStream_returnsCorrectDuration()
-      throws IOException, InterruptedException {
+  public void readDuration_midStream_returnsCorrectDuration() throws IOException {
     FakeExtractorInput input =
         new FakeExtractorInput.Builder()
             .setData(
-                TestUtil.getByteArray(ApplicationProvider.getApplicationContext(), "ts/sample.ps"))
+                TestUtil.getByteArray(
+                    ApplicationProvider.getApplicationContext(), "ts/sample_h262_mpeg_audio.ps"))
             .build();
 
     input.setPosition(1234);

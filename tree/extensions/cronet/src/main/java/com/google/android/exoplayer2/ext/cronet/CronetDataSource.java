@@ -819,7 +819,9 @@ public class CronetDataSource extends BaseDataSource implements HttpDataSource {
       if (matcher.find()) {
         try {
           long contentLengthFromRange =
-              Long.parseLong(matcher.group(2)) - Long.parseLong(matcher.group(1)) + 1;
+              Long.parseLong(Assertions.checkNotNull(matcher.group(2)))
+                  - Long.parseLong(Assertions.checkNotNull(matcher.group(1)))
+                  + 1;
           if (contentLength < 0) {
             // Some proxy servers strip the Content-Length header. Fall back to the length
             // calculated here in this case.
@@ -924,16 +926,12 @@ public class CronetDataSource extends BaseDataSource implements HttpDataSource {
         // For POST redirects that aren't 307 or 308, the redirect is followed but request is
         // transformed into a GET.
         redirectUrlDataSpec =
-            new DataSpec(
-                Uri.parse(newLocationUrl),
-                DataSpec.HTTP_METHOD_GET,
-                /* httpBody= */ null,
-                dataSpec.absoluteStreamPosition,
-                dataSpec.position,
-                dataSpec.length,
-                dataSpec.key,
-                dataSpec.flags,
-                dataSpec.httpRequestHeaders);
+            dataSpec
+                .buildUpon()
+                .setUri(newLocationUrl)
+                .setHttpMethod(DataSpec.HTTP_METHOD_GET)
+                .setHttpBody(null)
+                .build();
       } else {
         redirectUrlDataSpec = dataSpec.withUri(Uri.parse(newLocationUrl));
       }
