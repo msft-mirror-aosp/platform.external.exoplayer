@@ -60,8 +60,9 @@ def cleanup():
   shutil.rmtree(TEMPORARY_TREE_CHECKOUT_DIR, ignore_errors=True)
 atexit.register(cleanup)
 
+# Update remote branches.
+run("git fetch --all --tags")
 if args.tag:
-  run("git fetch --all --tags")
   # Get the commit SHA associated to the tag.
   commit = run(f"git rev-list -n 1 {args.tag}")
 else: # a commit SHA was provided.
