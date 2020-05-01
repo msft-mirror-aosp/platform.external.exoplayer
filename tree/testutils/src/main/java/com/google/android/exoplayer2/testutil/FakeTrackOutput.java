@@ -72,7 +72,9 @@ public final class FakeTrackOutput implements TrackOutput, Dumper.Dumpable {
   }
 
   @Override
-  public int sampleData(DataReader input, int length, boolean allowEndOfInput) throws IOException {
+  public int sampleData(
+      DataReader input, int length, boolean allowEndOfInput, @SampleDataPart int sampleDataPart)
+      throws IOException {
     byte[] newData = new byte[length];
     int bytesAppended = input.read(newData, 0, length);
     if (bytesAppended == C.RESULT_END_OF_INPUT) {
@@ -87,7 +89,7 @@ public final class FakeTrackOutput implements TrackOutput, Dumper.Dumpable {
   }
 
   @Override
-  public void sampleData(ParsableByteArray data, int length) {
+  public void sampleData(ParsableByteArray data, int length, @SampleDataPart int sampleDataPart) {
     byte[] newData = new byte[length];
     data.readBytes(newData, 0, length);
     sampleData = TestUtil.joinByteArrays(sampleData, newData);
@@ -294,6 +296,7 @@ public final class FakeTrackOutput implements TrackOutput, Dumper.Dumpable {
       addIfNonDefault(dumper, "subsampleOffsetUs", format -> format.subsampleOffsetUs);
       addIfNonDefault(dumper, "selectionFlags", format -> format.selectionFlags);
       addIfNonDefault(dumper, "language", format -> format.language);
+      addIfNonDefault(dumper, "label", format -> format.label);
       if (format.drmInitData != null) {
         dumper.add("drmInitData", format.drmInitData.hashCode());
       }
