@@ -68,9 +68,11 @@ public final class MediaItem {
     private boolean drmMultiSession;
     private boolean drmPlayClearContentWithoutKey;
     private List<Integer> drmSessionForClearTypes;
+    @Nullable private byte[] drmKeySetId;
     private List<StreamKey> streamKeys;
     @Nullable private String customCacheKey;
     private List<Subtitle> subtitles;
+    @Nullable private Uri adTagUri;
     @Nullable private Object tag;
     @Nullable private MediaMetadata mediaMetadata;
 
@@ -88,12 +90,13 @@ public final class MediaItem {
       clipEndPositionMs = mediaItem.clippingProperties.endPositionMs;
       clipRelativeToLiveWindow = mediaItem.clippingProperties.relativeToLiveWindow;
       clipRelativeToDefaultPosition = mediaItem.clippingProperties.relativeToDefaultPosition;
-      clipStartsAtKeyFrame = mediaItem.clippingProperties.startsAtKeyFrame;
       clipStartPositionMs = mediaItem.clippingProperties.startPositionMs;
+      clipStartsAtKeyFrame = mediaItem.clippingProperties.startsAtKeyFrame;
       mediaId = mediaItem.mediaId;
       mediaMetadata = mediaItem.mediaMetadata;
       @Nullable PlaybackProperties playbackProperties = mediaItem.playbackProperties;
       if (playbackProperties != null) {
+        adTagUri = playbackProperties.adTagUri;
         customCacheKey = playbackProperties.customCacheKey;
         mimeType = playbackProperties.mimeType;
         sourceUri = playbackProperties.sourceUri;
@@ -108,6 +111,7 @@ public final class MediaItem {
           drmPlayClearContentWithoutKey = drmConfiguration.playClearContentWithoutKey;
           drmSessionForClearTypes = drmConfiguration.sessionForClearTypes;
           drmUuid = drmConfiguration.uuid;
+          drmKeySetId = drmConfiguration.getKeySetId();
         }
       }
     }
@@ -310,6 +314,20 @@ public final class MediaItem {
     }
 
     /**
+     * Sets the key set ID of the offline license.
+     *
+     * <p>The key set ID identifies an offline license. The ID is required to query, renew or
+     * release an existing offline license (see {@code DefaultDrmSessionManager#setMode(int
+     * mode,byte[] offlineLicenseKeySetId)}).
+     *
+     * <p>If no valid DRM configuration is specified, the key set ID is ignored.
+     */
+    public Builder setDrmKeySetId(@Nullable byte[] keySetId) {
+      this.drmKeySetId = keySetId != null ? Arrays.copyOf(keySetId, keySetId.length) : null;
+      return this;
+    }
+
+    /**
      * Sets the optional stream keys by which the manifest is filtered (only used for adaptive
      * streams).
      *
@@ -354,6 +372,28 @@ public final class MediaItem {
     }
 
     /**
+     * Sets the optional ad tag URI.
+     *
+     * <p>If a {@link PlaybackProperties#sourceUri} is set, the ad tag URI is used to create a
+     * {@link PlaybackProperties} object. Otherwise it will be ignored.
+     */
+    public Builder setAdTagUri(@Nullable String adTagUri) {
+      this.adTagUri = adTagUri != null ? Uri.parse(adTagUri) : null;
+      return this;
+    }
+
+    /**
+     * Sets the optional ad tag {@link Uri}.
+     *
+     * <p>If a {@link PlaybackProperties#sourceUri} is set, the ad tag URI is used to create a
+     * {@link PlaybackProperties} object. Otherwise it will be ignored.
+     */
+    public Builder setAdTagUri(@Nullable Uri adTagUri) {
+      this.adTagUri = adTagUri;
+      return this;
+    }
+
+    /**
      * Sets the optional tag for custom attributes. The tag for the media source which will be
      * published in the {@code com.google.android.exoplayer2.Timeline} of the source as {@code
      * com.google.android.exoplayer2.Timeline.Window#tag}.
@@ -390,11 +430,13 @@ public final class MediaItem {
                         drmLicenseRequestHeaders,
                         drmMultiSession,
                         drmPlayClearContentWithoutKey,
-                        drmSessionForClearTypes)
+                        drmSessionForClearTypes,
+                        drmKeySetId)
                     : null,
                 streamKeys,
                 customCacheKey,
                 subtitles,
+                adTagUri,
                 tag);
         mediaId = mediaId != null ? mediaId : sourceUri.toString();
       }
@@ -438,19 +480,29 @@ public final class MediaItem {
     /** The types of clear tracks for which to use a drm session. */
     public final List<Integer> sessionForClearTypes;
 
+    @Nullable private final byte[] keySetId;
+
     private DrmConfiguration(
         UUID uuid,
         @Nullable Uri licenseUri,
         Map<String, String> requestHeaders,
         boolean multiSession,
         boolean playClearContentWithoutKey,
-        List<Integer> drmSessionForClearTypes) {
+        List<Integer> drmSessionForClearTypes,
+        @Nullable byte[] keySetId) {
       this.uuid = uuid;
       this.licenseUri = licenseUri;
       this.requestHeaders = requestHeaders;
       this.multiSession = multiSession;
       this.playClearContentWithoutKey = playClearContentWithoutKey;
       this.sessionForClearTypes = drmSessionForClearTypes;
+      this.keySetId = keySetId != null ? Arrays.copyOf(keySetId, keySetId.length) : null;
+    }
+
+    /** Returns the key set ID of the offline license. */
+    @Nullable
+    public byte[] getKeySetId() {
+      return keySetId != null ? Arrays.copyOf(keySetId, keySetId.length) : null;
     }
 
     @Override
@@ -468,7 +520,8 @@ public final class MediaItem {
           && Util.areEqual(requestHeaders, other.requestHeaders)
           && multiSession == other.multiSession
           && playClearContentWithoutKey == other.playClearContentWithoutKey
-          && sessionForClearTypes.equals(other.sessionForClearTypes);
+          && sessionForClearTypes.equals(other.sessionForClearTypes)
+          && Arrays.equals(keySetId, other.keySetId);
     }
 
     @Override
@@ -479,6 +532,7 @@ public final class MediaItem {
       result = 31 * result + (multiSession ? 1 : 0);
       result = 31 * result + (playClearContentWithoutKey ? 1 : 0);
       result = 31 * result + sessionForClearTypes.hashCode();
+      result = 31 * result + Arrays.hashCode(keySetId);
       return result;
     }
   }
@@ -509,6 +563,9 @@ public final class MediaItem {
     /** Optional subtitles to be sideloaded. */
     public final List<Subtitle> subtitles;
 
+    /** Optional ad tag {@link Uri}. */
+    @Nullable public final Uri adTagUri;
+
     /**
      * Optional tag for custom attributes. The tag for the media source which will be published in
      * the {@code com.google.android.exoplayer2.Timeline} of the source as {@code
@@ -523,6 +580,7 @@ public final class MediaItem {
         List<StreamKey> streamKeys,
         @Nullable String customCacheKey,
         List<Subtitle> subtitles,
+        @Nullable Uri adTagUri,
         @Nullable Object tag) {
       this.sourceUri = sourceUri;
       this.mimeType = mimeType;
@@ -530,6 +588,7 @@ public final class MediaItem {
       this.streamKeys = streamKeys;
       this.customCacheKey = customCacheKey;
       this.subtitles = subtitles;
+      this.adTagUri = adTagUri;
       this.tag = tag;
     }
 
@@ -549,6 +608,7 @@ public final class MediaItem {
           && streamKeys.equals(other.streamKeys)
           && Util.areEqual(customCacheKey, other.customCacheKey)
           && subtitles.equals(other.subtitles)
+          && Util.areEqual(adTagUri, other.adTagUri)
           && Util.areEqual(tag, other.tag);
     }
 
@@ -560,6 +620,7 @@ public final class MediaItem {
       result = 31 * result + streamKeys.hashCode();
       result = 31 * result + (customCacheKey == null ? 0 : customCacheKey.hashCode());
       result = 31 * result + subtitles.hashCode();
+      result = 31 * result + (adTagUri == null ? 0 : adTagUri.hashCode());
       result = 31 * result + (tag == null ? 0 : tag.hashCode());
       return result;
     }
