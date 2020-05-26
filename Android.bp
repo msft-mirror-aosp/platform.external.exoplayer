@@ -23,6 +23,10 @@ android_library {
         "tree/library/common/src/main/java/**/*.java",
     ],
     sdk_version: "29", // Needs to be a prebuilt, so not "current".
+    apex_available: [
+        "com.android.media",
+    ],
+    min_sdk_version: "16", // match with tree/constants.gradle
     static_libs: [
         "exoplayer2-extractor-annotation-stubs",
         "androidx.annotation_annotation",
@@ -39,6 +43,10 @@ java_library {
     name: "exoplayer2-extractor-annotation-stubs",
     host_supported: true,
     sdk_version: "core_current",
+    apex_available: [
+        "com.android.media",
+    ],
+    min_sdk_version: "16",
     srcs: ["annotation-stubs/src/**/*.java"],
     static_libs: ["jsr305"],
     visibility: ["//visibility:private"],
