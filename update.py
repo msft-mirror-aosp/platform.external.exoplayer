@@ -10,8 +10,6 @@ import shutil
 import re
 import datetime
 
-BRANCH_UPSTREAM_DEV = "goog/upstream-dev-v2"
-BRANCH_USPTREAM_RELEASE = "goog/upstream-release-v2"
 TEMPORARY_TREE_CHECKOUT_DIR = ".temp_tree/"
 TREE_LOCATION = "tree/"
 METADATA_FILE = "METADATA"
