@@ -1,2 +1,2 @@
-# This file is here to hide Android.mk files in the ExoPlayer tree. For example,
-# extensions/ffmpeg/src/main/jni/Android.mk.
+# This file is here to hide other Android.mk files in external/exoplayer.
+# external/exoplayer only uses Android.bp files.
