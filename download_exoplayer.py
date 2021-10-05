@@ -81,6 +81,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
   # Copy all files in the tree into tree_<SHA>.
   shutil.rmtree(".git/", ignore_errors=True)
+  # Remove all Android.mk files in the exoplayer tree to avoid licensing issues.
+  run("find . -name Android.mk -delete")
   cd_to_script_parent_directory()
   new_tree_location = f"tree_{commit_sha}"
   run(f"mv {tmpdir} {new_tree_location}")
