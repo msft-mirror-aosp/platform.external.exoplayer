@@ -12,6 +12,7 @@ ANNOTATIONS=(
     org.checkerframework.checker.nullness.qual.Nullable
     org.checkerframework.checker.nullness.qual.PolyNull
     org.checkerframework.checker.nullness.qual.RequiresNonNull
+    org.checkerframework.dataflow.qual.Pure
 )
 
 ENUMS=(
