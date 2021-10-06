@@ -48,7 +48,7 @@ java_library {
         "androidx.annotation_annotation",
         "jsr305",
     ],
-    jarjar_rules: "exoplayer2-extractor-jarjar-rules.txt",
+    jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//frameworks/base:__subpackages__"],
     notice: "LICENSE",
 }
@@ -90,7 +90,7 @@ android_library {
         "junit",
         "androidx.test.core",
     ],
-    jarjar_rules: "exoplayer2-extractor-jarjar-rules.txt",
+    jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//cts/tests/tests/mediaparser:__subpackages__"],
     notice: "LICENSE",
 }
