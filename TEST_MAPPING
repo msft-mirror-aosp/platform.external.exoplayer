@@ -5,6 +5,9 @@
     },
     {
       "name": "CtsMediaParserHostTestCases"
+    },
+    {
+      "name": "MediaProviderTests"
     }
   ]
 }
