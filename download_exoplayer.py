@@ -33,6 +33,20 @@ def run(command, check=True):
       text=True).stdout.strip())
 
 
+def confirm_deletion_or_exit(files_to_delete):
+  print("The following files will not be added to exoplayer/external: \n" +
+        files_to_delete)
+  while True:
+    print("Please confirm [y/n] ")
+    choice = input().lower()
+    if choice in ["y", "yes"]:
+      return
+    elif choice in ["n", "no"]:
+      sys.exit("User rejected the list of .mk files to exclude from the tree.")
+    else:
+      print("Please select y or n.")
+
+
 logging.basicConfig(level=logging.INFO)
 
 parser = argparse.ArgumentParser(
@@ -81,8 +95,12 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
   # Copy all files in the tree into tree_<SHA>.
   shutil.rmtree(".git/", ignore_errors=True)
+
   # Remove all Android.mk files in the exoplayer tree to avoid licensing issues.
-  run("find . -name Android.mk -delete")
+  mk_files_to_remove = run("find . -name \"*.mk\"")
+  confirm_deletion_or_exit(mk_files_to_remove)
+  run("find . -name \"*.mk\" -delete")
+
   cd_to_script_parent_directory()
   new_tree_location = f"tree_{commit_sha}"
   run(f"mv {tmpdir} {new_tree_location}")
