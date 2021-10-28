@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-// Exposes ExoPlayer classes required for implementing the MediaParser API.
-
 // README: Before expanding the visiblity of any of the targets in this file,
 // please add a test that covers the new dependencies in the TEST_MAPPING file
 // of this directory. We cannot guarantee that ExoPlayer dependents will not be
