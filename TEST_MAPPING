@@ -4,7 +4,10 @@
       "name": "CtsMediaParserTestCases"
     },
     {
-      "name": "CtsMediaParserHostSideTestCases"
+      "name": "CtsMediaParserHostTestCases"
+    },
+    {
+      "name": "MediaProviderTests"
     }
   ]
 }
