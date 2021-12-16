@@ -65,7 +65,7 @@ android_library {
     ],
     manifest: "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/ui/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
-    visibility: ["//packages/providers/MediaProvider"],
+    visibility: ["//packages/providers/MediaProvider:__subpackages__",],
     notice: "LICENSE"
 }
 
