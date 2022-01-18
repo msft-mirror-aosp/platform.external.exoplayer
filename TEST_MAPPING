@@ -8,6 +8,9 @@
     },
     {
       "name": "MediaProviderTests"
+    },
+    {
+      "name": "CtsPhotoPickerTest"
     }
   ]
 }
