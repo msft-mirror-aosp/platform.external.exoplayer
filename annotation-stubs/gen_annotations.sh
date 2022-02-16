@@ -9,7 +9,6 @@ ANNOTATIONS=(
     org.checkerframework.checker.nullness.qual.EnsuresNonNull
     org.checkerframework.checker.nullness.qual.EnsuresNonNullIf
     org.checkerframework.checker.nullness.qual.MonotonicNonNull
-    org.checkerframework.checker.nullness.qual.NonNull
     org.checkerframework.checker.nullness.qual.Nullable
     org.checkerframework.checker.nullness.qual.PolyNull
     org.checkerframework.checker.nullness.qual.RequiresNonNull
