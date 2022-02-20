@@ -49,7 +49,10 @@ java_library {
         "jsr305",
     ],
     jarjar_rules: "exoplayer2-extractor-jarjar-rules.txt",
-    visibility: ["//frameworks/base:__subpackages__"],
+    visibility: [
+        "//frameworks/base:__subpackages__",
+        "//packages/modules/Media/apex/framework",
+    ],
     notice: "LICENSE",
 }
 
