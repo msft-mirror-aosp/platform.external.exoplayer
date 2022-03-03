@@ -14,6 +14,9 @@
     },
     {
       "name": "CtsPhotoPickerTest"
+    },
+    {
+      "name": "ClockworkRetailAttractLoopRoboTests"
     }
   ]
 }
