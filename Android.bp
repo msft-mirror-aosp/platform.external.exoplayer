@@ -127,22 +127,6 @@ java_library {
     notice: "LICENSE",
 }
 
-// Compile dummy implementations of annotations used by exoplayer but not
-// present in the Android tree.
-java_library {
-    name: "exoplayer2-annotation-stubs",
-    host_supported: true,
-    sdk_version: "core_current",
-    apex_available: [
-        "//apex_available:anyapex", 
-        "//apex_available:platform",
-    ],
-    min_sdk_version: "16",
-    srcs: ["annotation-stubs/src/**/*.java"],
-    static_libs: ["jsr305"],
-    visibility: ["//visibility:private"],
-}
-
 android_library {
     name: "exoplayer2.15.1-core-lib",
     manifest: "tree/library/extractor/src/main/AndroidManifest.xml",
@@ -228,4 +212,20 @@ android_library {
         "-0 .wav",
         "-0 .webm",
     ],
+}
+
+// Compile dummy implementations of annotations used by exoplayer but not
+// present in the Android tree.
+java_library {
+    name: "exoplayer2-annotation-stubs",
+    host_supported: true,
+    sdk_version: "core_current",
+    apex_available: [
+        "//apex_available:anyapex",
+        "//apex_available:platform",
+    ],
+    min_sdk_version: "16",
+    srcs: ["annotation-stubs/src/**/*.java"],
+    static_libs: ["jsr305"],
+    visibility: ["//visibility:private"],
 }
