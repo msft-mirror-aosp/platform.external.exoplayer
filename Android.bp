@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-// README: Before expanding the visiblity of any of the targets in this file,
+// README: Before expanding the visibility of any of the targets in this file,
 // please add a test that covers the new dependencies in the TEST_MAPPING file
 // of this directory. We cannot guarantee that ExoPlayer dependents will not be
 // accidentally broken if it is not covered by presubmit.
