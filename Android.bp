@@ -47,7 +47,7 @@ android_library {
         "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/ui/src/main/java/**/*.java",
     ],
     resource_dirs: [
-        "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/ui/src/main/res",
+        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/ui/src/main/res",
     ],
     sdk_version: "31",     // Needs to be a prebuilt, so not "current".
     min_sdk_version: "16", // match with
