@@ -44,17 +44,55 @@ license {
 android_library {
     name: "exoplayer-mediaprovider-ui",
     srcs: [
-        "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/common/src/main/java/**/*.java",
-        "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/core/src/main/java/**/*/*.java",
-        "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/extractor/src/main/java/**/*.java",
-        "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/ui/src/main/java/**/*.java"
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/ui/src/main/java/**/*.java",
     ],
     resource_dirs: [
-        "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/ui/src/main/res",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/ui/src/main/res",
     ],
     sdk_version: "31",     // Needs to be a prebuilt, so not "current".
     min_sdk_version: "16", // match with
-                           // tree_410ddf458c4daebcf3f997084891c82f2dbd6805/constants.gradle
+                           // tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
+    libs: ["androidx.annotation_annotation"],
+    static_libs: [
+        "androidx.core_core",
+        "androidx.media_media",
+        "androidx.recyclerview_recyclerview",
+        "error_prone_annotations",
+        "exoplayer-annotation_stubs",
+        "exoplayer-mediaprovider-core",
+        "guava",
+        "jsr305",
+    ],
+    apex_available: [
+        "com.android.mediaprovider",
+        "//apex_available:platform",
+    ],
+
+    manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/ui/src/main/AndroidManifest.xml",
+    jarjar_rules: "annotation-stripping-jarjar-rules.txt",
+    visibility: ["//packages/providers/MediaProvider:__subpackages__"],
+    notice: "LICENSE"
+}
+
+// Needed because exoplayer-mediaprovider-ui depends on a resource from core, using the core package
+// name, meaning the resources from this target need to use the package name from core's manifest,
+// while exoplayer-mediaprovider-ui resources need to keep ui's package name.
+android_library {
+    name: "exoplayer-mediaprovider-core",
+    srcs: [
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/common/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/java/**/*/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/database/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/datasource/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/decoder/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/extractor/src/main/java/**/*.java",
+    ],
+    resource_dirs: [
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/res",
+    ],
+    sdk_version: "31",     // Needs to be a prebuilt, so not "current".
+    min_sdk_version: "16", // match with
+                           // tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
     libs: ["androidx.annotation_annotation"],
     static_libs: [
         "androidx.core_core",
@@ -68,9 +106,9 @@ android_library {
     apex_available: [
         "com.android.mediaprovider",
     ],
-    manifest: "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/ui/src/main/AndroidManifest.xml",
+    manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
-    visibility: ["//packages/providers/MediaProvider:__subpackages__",],
+    visibility: ["//visibility:private"],
     notice: "LICENSE"
 }
 
