@@ -1,6 +1,9 @@
 {
   "presubmit": [
     {
+      "name": "CtsMediaMuxerTestCases"
+    },
+    {
       "name": "CtsMediaParserTestCases"
     },
     {
