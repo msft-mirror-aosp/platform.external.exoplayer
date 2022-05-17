@@ -43,9 +43,9 @@ java_library {
         "com.android.media",
     ],
     min_sdk_version: "16", // match with tree/constants.gradle
+    libs: ["androidx.annotation_annotation"],
     static_libs: [
         "exoplayer2-extractor-annotation-stubs",
-        "androidx.annotation_annotation",
         "jsr305",
     ],
     jarjar_rules: "exoplayer2-extractor-jarjar-rules.txt",
@@ -85,10 +85,10 @@ android_library {
         "tree/library/core/src/main/java/com/google/android/exoplayer2/database/DefaultDatabaseProvider.java",
     ],
     sdk_version: "29",
+    libs: ["androidx.annotation_annotation"],
     static_libs: [
         "exoplayer2-extractor",
         "exoplayer2-extractor-annotation-stubs",
-        "androidx.annotation_annotation",
         "truth-prebuilt",
         "junit",
         "androidx.test.core",
