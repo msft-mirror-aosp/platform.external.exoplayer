@@ -44,57 +44,19 @@ license {
 android_library {
     name: "exoplayer-mediaprovider-ui",
     srcs: [
-        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/ui/src/main/java/**/*.java",
+        "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/common/src/main/java/**/*.java",
+        "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/core/src/main/java/**/*/*.java",
+        "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/extractor/src/main/java/**/*.java",
+        "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/ui/src/main/java/**/*.java"
     ],
     resource_dirs: [
-        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/ui/src/main/res",
+        "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/ui/src/main/res",
     ],
     sdk_version: "31",     // Needs to be a prebuilt, so not "current".
     min_sdk_version: "16", // match with
-                           // tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
-    libs: ["androidx.annotation_annotation"],
+                           // tree_410ddf458c4daebcf3f997084891c82f2dbd6805/constants.gradle
     static_libs: [
-        "androidx.core_core",
-        "androidx.media_media",
-        "androidx.recyclerview_recyclerview",
-        "error_prone_annotations",
-        "exoplayer-annotation_stubs",
-        "exoplayer-mediaprovider-core",
-        "guava",
-        "jsr305",
-    ],
-    apex_available: [
-        "com.android.mediaprovider",
-        "//apex_available:platform",
-    ],
-
-    manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/ui/src/main/AndroidManifest.xml",
-    jarjar_rules: "annotation-stripping-jarjar-rules.txt",
-    visibility: ["//packages/providers/MediaProvider:__subpackages__"],
-    notice: "LICENSE"
-}
-
-// Needed because exoplayer-mediaprovider-ui depends on a resource from core, using the core package
-// name, meaning the resources from this target need to use the package name from core's manifest,
-// while exoplayer-mediaprovider-ui resources need to keep ui's package name.
-android_library {
-    name: "exoplayer-mediaprovider-core",
-    srcs: [
-        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/common/src/main/java/**/*.java",
-        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/java/**/*/*.java",
-        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/database/src/main/java/**/*.java",
-        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/datasource/src/main/java/**/*.java",
-        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/decoder/src/main/java/**/*.java",
-        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/extractor/src/main/java/**/*.java",
-    ],
-    resource_dirs: [
-        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/res",
-    ],
-    sdk_version: "31",     // Needs to be a prebuilt, so not "current".
-    min_sdk_version: "16", // match with
-                           // tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
-    libs: ["androidx.annotation_annotation"],
-    static_libs: [
+        "androidx.annotation_annotation",
         "androidx.core_core",
         "androidx.media_media",
         "androidx.recyclerview_recyclerview",
@@ -106,42 +68,10 @@ android_library {
     apex_available: [
         "com.android.mediaprovider",
     ],
-    manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/AndroidManifest.xml",
+    manifest: "tree_410ddf458c4daebcf3f997084891c82f2dbd6805/library/ui/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
-    visibility: ["//visibility:private"],
+    visibility: ["//packages/providers/MediaProvider:__subpackages__",],
     notice: "LICENSE"
-}
-
-
-// Used by MediaMuxerTest to test features not supported by MediaExtractor.
-android_library {
-    name: "exoplayer-mediamuxer_tests",
-    srcs: [
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/common/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/decoder/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/core/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/database/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/datasource/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/extractor/src/main/java/**/*.java",
-    ],
-    manifest: "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/core/src/main/AndroidManifest.xml",
-    resource_dirs: [
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/core/src/main/res",
-    ],
-    sdk_version: "31",     // Needs to be a prebuilt, so not "current".
-    min_sdk_version: "16", // match with
-                           // tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
-    libs: ["androidx.annotation_annotation"],
-    static_libs: [
-        "androidx.core_core",
-        "error_prone_annotations",
-        "exoplayer-annotation_stubs",
-        "guava",
-        "jsr305",
-    ],
-    jarjar_rules: "annotation-stripping-jarjar-rules.txt",
-    visibility: ["//cts/tests/tests/media/muxer:__subpackages__"],
-    notice: "LICENSE",
 }
 
 java_library {
@@ -155,16 +85,13 @@ java_library {
         "com.android.media",
     ],
     min_sdk_version: "16", // match with tree/constants.gradle
-    libs: ["androidx.annotation_annotation"],
     static_libs: [
+        "androidx.annotation_annotation",
         "exoplayer-annotation_stubs",
         "jsr305",
     ],
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
-    visibility: [
-        "//frameworks/base:__subpackages__",
-        "//packages/modules/Media/apex/framework",
-    ],
+    visibility: ["//frameworks/base:__subpackages__"],
     notice: "LICENSE",
 }
 
@@ -182,8 +109,8 @@ android_library {
         "tree/library/core/src/main/java/com/google/android/exoplayer2/database/DefaultDatabaseProvider.java",
     ],
     sdk_version: "29",
-    libs: ["androidx.annotation_annotation"],
     static_libs: [
+        "androidx.annotation_annotation",
         "exoplayer-annotation_stubs",
         "exoplayer-media_apex",
         "truth-prebuilt",
