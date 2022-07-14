@@ -53,7 +53,6 @@ java_library {
         "//frameworks/base:__subpackages__",
         "//packages/modules/Media/apex/framework",
     ],
-    notice: "LICENSE",
 }
 
 // Compile dummy implementations of annotations used by exoplayer but not
@@ -95,7 +94,6 @@ android_library {
     ],
     jarjar_rules: "exoplayer2-extractor-jarjar-rules.txt",
     visibility: ["//cts/tests/tests/mediaparser:__subpackages__"],
-    notice: "LICENSE",
 }
 
 // Exposes the assets for testing MediaParser.
