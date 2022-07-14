@@ -165,7 +165,6 @@ java_library {
         "//frameworks/base:__subpackages__",
         "//packages/modules/Media/apex/framework",
     ],
-    notice: "LICENSE",
 }
 
 // Exposes util classes for testing MediaParser.
@@ -192,7 +191,6 @@ android_library {
     ],
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//cts/tests/tests/mediaparser:__subpackages__"],
-    notice: "LICENSE",
 }
 
 // Exposes the assets for testing MediaParser.
