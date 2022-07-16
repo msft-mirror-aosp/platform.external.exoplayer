@@ -71,7 +71,6 @@ android_library {
     manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/ui/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//packages/providers/MediaProvider:__subpackages__"],
-    notice: "LICENSE"
 }
 
 // Needed because exoplayer-mediaprovider-ui depends on a resource from core, using the core package
@@ -109,7 +108,6 @@ android_library {
     manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//visibility:private"],
-    notice: "LICENSE"
 }
 
 
@@ -141,7 +139,6 @@ android_library {
     ],
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//cts/tests/tests/media/muxer:__subpackages__"],
-    notice: "LICENSE",
 }
 
 java_library {
