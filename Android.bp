@@ -203,7 +203,6 @@ android_library {
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//vendor:__subpackages__"], // Visibility for vendor's subdirs is not allowed, so
                                               // we can limit visibility to vendor, at most.
-    notice: "LICENSE",
 }
 
 // Exposes util classes for testing MediaParser.
