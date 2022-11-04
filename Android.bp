@@ -182,7 +182,7 @@ android_library {
     static_libs: [
         "exoplayer-annotation_stubs",
         "exoplayer-media_apex",
-        "truth-prebuilt",
+        "truth",
         "junit",
         "androidx.test.core",
     ],
