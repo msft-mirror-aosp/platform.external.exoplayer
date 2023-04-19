@@ -111,7 +111,6 @@ android_library {
     visibility: ["//visibility:private"],
 }
 
-
 // Used by MediaMuxerTest to test features not supported by MediaExtractor.
 android_library {
     name: "exoplayer-mediamuxer_tests",
@@ -172,37 +171,60 @@ java_library {
 }
 
 android_library {
-    name: "exoplayer-vendor_cwral", // Intentionally using an acronym to hide vendor's structure.
+    name: "exoplayer-vendor_cwral",
     srcs: [
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/common/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/core/src/main/java/**/*/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/database/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/datasource/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/decoder/src/main/java/**/*/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/extractor/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/extensions/vp9/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/extensions/vp9/src/main/java/com/google/android/exoplayer2/ext/vp9/*.java",
     ],
-    resource_dirs: [
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/core/src/main/res",
-    ],
-    manifest: "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/core/src/main/AndroidManifest.xml",
     sdk_version: "31",     // Needs to be a prebuilt, so not "current".
     min_sdk_version: "16", // match with
-                           // tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
+                           // tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
+    libs: ["androidx.annotation_annotation"],
+    static_libs: [
+        "androidx.core_core",
+        "error_prone_annotations",
+        "exoplayer-annotation_stubs",
+        "exoplayer-vendor_cwral-core",
+        "guava",
+        "jsr305",
+    ],
     apex_available: [
         "//apex_available:platform",
+    ], 
+    manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/AndroidManifest.xml",
+  jarjar_rules: "annotation-stripping-jarjar-rules.txt",
+    visibility: ["//vendor:__subpackages__"],
+}
+
+android_library {
+    name: "exoplayer-vendor_cwral-core",
+    srcs: [
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/common/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/java/**/*/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/database/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/datasource/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/decoder/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/extractor/src/main/java/**/*.java",
     ],
+    resource_dirs: [
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/res",
+    ],
+    sdk_version: "31",     // Needs to be a prebuilt, so not "current".
+    min_sdk_version: "16", // match with
+                           // tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
+    libs: ["androidx.annotation_annotation"],
     static_libs: [
-        "androidx.annotation_annotation",
         "androidx.core_core",
         "error_prone_annotations",
         "exoplayer-annotation_stubs",
         "guava",
-        "jsr305"
+        "jsr305",
     ],
+    apex_available: [
+        "//apex_available:platform",
+    ],
+    manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
-    visibility: ["//vendor:__subpackages__"], // Visibility for vendor's subdirs is not allowed, so
-                                              // we can limit visibility to vendor, at most.
+    visibility: ["//visibility:private"],
 }
 
 // Exposes util classes for testing MediaParser.
@@ -285,3 +307,4 @@ java_library {
     static_libs: ["jsr305"],
     visibility: ["//visibility:private"],
 }
+
