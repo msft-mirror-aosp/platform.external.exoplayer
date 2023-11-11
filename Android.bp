@@ -50,7 +50,7 @@ android_library {
         "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/ui/src/main/res",
     ],
     sdk_version: "31",     // Needs to be a prebuilt, so not "current".
-    min_sdk_version: "16", // match with
+    min_sdk_version: "19", // match with
                            // tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
     libs: ["androidx.annotation_annotation"],
     static_libs: [
@@ -90,7 +90,7 @@ android_library {
         "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/res",
     ],
     sdk_version: "31",     // Needs to be a prebuilt, so not "current".
-    min_sdk_version: "16", // match with
+    min_sdk_version: "19", // match with
                            // tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
     libs: ["androidx.annotation_annotation"],
     static_libs: [
@@ -127,7 +127,7 @@ android_library {
         "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/core/src/main/res",
     ],
     sdk_version: "31",     // Needs to be a prebuilt, so not "current".
-    min_sdk_version: "16", // match with
+    min_sdk_version: "19", // match with
                            // tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
     libs: ["androidx.annotation_annotation"],
     static_libs: [
@@ -154,7 +154,7 @@ java_library {
         "com.android.media",
         "//apex_available:platform",
     ],
-    min_sdk_version: "16", // match with
+    min_sdk_version: "19", // match with
                            // tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
     libs: ["androidx.annotation_annotation"],
     static_libs: [
@@ -176,7 +176,7 @@ android_library {
         "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/extensions/vp9/src/main/java/com/google/android/exoplayer2/ext/vp9/*.java",
     ],
     sdk_version: "31",     // Needs to be a prebuilt, so not "current".
-    min_sdk_version: "16", // match with
+    min_sdk_version: "19", // match with
                            // tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
     libs: ["androidx.annotation_annotation"],
     static_libs: [
@@ -209,7 +209,7 @@ android_library {
         "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/res",
     ],
     sdk_version: "31",     // Needs to be a prebuilt, so not "current".
-    min_sdk_version: "16", // match with
+    min_sdk_version: "19", // match with
                            // tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
     libs: ["androidx.annotation_annotation"],
     static_libs: [
@@ -302,7 +302,7 @@ java_library {
         "//apex_available:anyapex",
         "//apex_available:platform",
     ],
-    min_sdk_version: "16",
+    min_sdk_version: "19",
     srcs: ["annotation-stubs/src/**/*.java"],
     static_libs: ["jsr305"],
     visibility: ["//visibility:private"],
