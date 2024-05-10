@@ -19,11 +19,17 @@
           "exclude-annotation": "androidx.test.filters.LargeTest"
         }
       ]
+    },
+    {
+      "name": "clockwork-retail-attract-loop-robotests"
     }
   ],
   "postsubmit": [
     {
       "name": "CtsPhotoPickerTest"
+    },
+    {
+      "name": "clockwork-retail-attract-loop-robotests"
     }
   ]
 }
