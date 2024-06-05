@@ -24,9 +24,6 @@
   "postsubmit": [
     {
       "name": "CtsPhotoPickerTest"
-    },
-    {
-      "name": "ClockworkRetailAttractLoopRoboTests"
     }
   ]
 }
