@@ -70,9 +70,6 @@ android_library {
     manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/ui/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//packages/providers/MediaProvider:__subpackages__"],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 // Needed because exoplayer-mediaprovider-ui depends on a resource from core, using the core package
@@ -110,9 +107,6 @@ android_library {
     manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//visibility:private"],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 // Used by MediaMuxerTest to test features not supported by MediaExtractor.
@@ -142,9 +136,6 @@ android_library {
     ],
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//cts/tests/tests/media/muxer:__subpackages__"],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 // Used by MediaParser to implement media container files parsing.
@@ -173,9 +164,6 @@ java_library {
         "//frameworks/base:__subpackages__",
         "//packages/modules/Media/apex/framework",
     ],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 android_library {
@@ -200,9 +188,6 @@ android_library {
     manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//vendor:__subpackages__"],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 android_library {
@@ -234,9 +219,6 @@ android_library {
     manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//visibility:private"],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 // Exposes util classes for testing MediaParser.
@@ -268,9 +250,6 @@ android_library {
     ],
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//cts/tests/tests/mediaparser:__subpackages__"],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 // Exposes the assets for testing MediaParser.
@@ -303,9 +282,6 @@ android_library {
         "-0 .wav",
         "-0 .webm",
     ],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 // Compile dummy implementations of annotations used by exoplayer but not
@@ -322,7 +298,4 @@ java_library {
     srcs: ["annotation-stubs/src/**/*.java"],
     static_libs: ["jsr305"],
     visibility: ["//visibility:private"],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
