@@ -50,7 +50,7 @@ android_library {
         "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/ui/src/main/res",
     ],
     sdk_version: "31", // Needs to be a prebuilt, so not "current".
-    min_sdk_version: "19", // match with tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
+    min_sdk_version: "21", // match with tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
     libs: ["androidx.annotation_annotation"],
     static_libs: [
         "androidx.core_core",
@@ -70,9 +70,6 @@ android_library {
     manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/ui/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//packages/providers/MediaProvider:__subpackages__"],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 // Needed because exoplayer-mediaprovider-ui depends on a resource from core, using the core package
@@ -92,7 +89,7 @@ android_library {
         "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/res",
     ],
     sdk_version: "31", // Needs to be a prebuilt, so not "current".
-    min_sdk_version: "19", // match with tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
+    min_sdk_version: "21", // match with tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
     libs: ["androidx.annotation_annotation"],
     static_libs: [
         "androidx.core_core",
@@ -110,9 +107,6 @@ android_library {
     manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//visibility:private"],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 // Used by MediaMuxerTest to test features not supported by MediaExtractor.
@@ -131,7 +125,7 @@ android_library {
         "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/core/src/main/res",
     ],
     sdk_version: "31", // Needs to be a prebuilt, so not "current".
-    min_sdk_version: "19", // match with tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
+    min_sdk_version: "21", // match with tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
     libs: ["androidx.annotation_annotation"],
     static_libs: [
         "androidx.core_core",
@@ -142,9 +136,6 @@ android_library {
     ],
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//cts/tests/tests/media/muxer:__subpackages__"],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 // Used by MediaParser to implement media container files parsing.
@@ -160,7 +151,7 @@ java_library {
         "com.android.media",
         "//apex_available:platform",
     ],
-    min_sdk_version: "19", // match with tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
+    min_sdk_version: "21", // match with tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
     libs: ["androidx.annotation_annotation"],
     static_libs: [
         "exoplayer-annotation_stubs",
@@ -173,45 +164,61 @@ java_library {
         "//frameworks/base:__subpackages__",
         "//packages/modules/Media/apex/framework",
     ],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 android_library {
-    name: "exoplayer-vendor_cwral", // Intentionally using an acronym to hide vendor's structure.
+    name: "exoplayer-vendor_cwral",
     srcs: [
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/common/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/core/src/main/java/**/*/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/database/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/datasource/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/decoder/src/main/java/**/*/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/extractor/src/main/java/**/*.java",
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/extensions/vp9/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/extensions/vp9/src/main/java/com/google/android/exoplayer2/ext/vp9/*.java",
     ],
-    resource_dirs: [
-        "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/core/src/main/res",
-    ],
-    manifest: "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/core/src/main/AndroidManifest.xml",
     sdk_version: "31", // Needs to be a prebuilt, so not "current".
-    min_sdk_version: "19", // match with tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
+    min_sdk_version: "21", // match with tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
+    libs: ["androidx.annotation_annotation"],
+    static_libs: [
+        "androidx.core_core",
+        "error_prone_annotations",
+        "exoplayer-annotation_stubs",
+        "exoplayer-vendor_cwral-core",
+        "guava",
+        "jsr305",
+    ],
     apex_available: [
         "//apex_available:platform",
     ],
+    manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/AndroidManifest.xml",
+    jarjar_rules: "annotation-stripping-jarjar-rules.txt",
+    visibility: ["//vendor:__subpackages__"],
+}
+
+android_library {
+    name: "exoplayer-vendor_cwral-core",
+    srcs: [
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/common/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/java/**/*/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/database/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/datasource/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/decoder/src/main/java/**/*.java",
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/extractor/src/main/java/**/*.java",
+    ],
+    resource_dirs: [
+        "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/res",
+    ],
+    sdk_version: "31", // Needs to be a prebuilt, so not "current".
+    min_sdk_version: "21", // match with tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/constants.gradle
+    libs: ["androidx.annotation_annotation"],
     static_libs: [
-        "androidx.annotation_annotation",
         "androidx.core_core",
         "error_prone_annotations",
         "exoplayer-annotation_stubs",
         "guava",
         "jsr305",
     ],
+    apex_available: [
+        "//apex_available:platform",
+    ],
+    manifest: "tree_8e57d3715f9092d5ec54ebe2e538f34bfcc34479/library/core/src/main/AndroidManifest.xml",
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
-    visibility: ["//vendor:__subpackages__"], // Visibility for vendor's subdirs is not allowed, so
-    // we can limit visibility to vendor, at most.
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
+    visibility: ["//visibility:private"],
 }
 
 // Exposes util classes for testing MediaParser.
@@ -232,7 +239,7 @@ android_library {
         "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/core/src/main/java/com/google/android/exoplayer2/source/ForwardingTimeline.java",
     ],
     sdk_version: "31",
-    min_sdk_version: "19", // match with tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
+    min_sdk_version: "21", // match with tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
     libs: ["androidx.annotation_annotation"],
     static_libs: [
         "exoplayer-annotation_stubs",
@@ -243,9 +250,6 @@ android_library {
     ],
     jarjar_rules: "annotation-stripping-jarjar-rules.txt",
     visibility: ["//cts/tests/tests/mediaparser:__subpackages__"],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 // Exposes the assets for testing MediaParser.
@@ -253,7 +257,7 @@ android_library {
     name: "exoplayer-cts_media-test_assets",
     manifest: "tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/library/extractor/src/main/AndroidManifest.xml",
     srcs: [],
-    min_sdk_version: "19", // match with tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
+    min_sdk_version: "21", // match with tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/constants.gradle
     visibility: ["//cts/tests/tests/mediaparser:__subpackages__"],
     asset_dirs: ["tree_15dc86382f17a24a3e881e52e31a810c1ea44b49/testdata/src/test/assets/"],
     // Do not compress media files.
@@ -278,9 +282,6 @@ android_library {
         "-0 .wav",
         "-0 .webm",
     ],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 // Compile dummy implementations of annotations used by exoplayer but not
@@ -293,11 +294,8 @@ java_library {
         "//apex_available:anyapex",
         "//apex_available:platform",
     ],
-    min_sdk_version: "19",
+    min_sdk_version: "21",
     srcs: ["annotation-stubs/src/**/*.java"],
     static_libs: ["jsr305"],
     visibility: ["//visibility:private"],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
